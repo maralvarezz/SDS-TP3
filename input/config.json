@@ -18,7 +18,6 @@
     "writeGoals": true,
     "writeCollisions": false
   },
-  "obstacles": [
-    { "x": 0.60, "y": 0.34, "radius": 0.32 }
-  ]
+  "obstaclesFile": "obstacles.txt",
+  "obstacles": []
 }

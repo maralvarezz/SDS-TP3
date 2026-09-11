@@ -41,4 +41,29 @@ class ConfigLoaderTest {
         assertThrows(IOException.class, () -> new ConfigLoader().load(write(JSON.replace("\"count\":100", "\"count\":100,\"typo\":1"))));
         assertThrows(IOException.class, () -> new ConfigLoader().load(write(JSON + "{}")));
     }
+
+    @Test
+    void loadsObstaclesFromObstaclesFileInCompetitionTxtFormat() throws IOException {
+        Files.writeString(directory.resolve("obstacles.txt"), "0.300 0.340 0.040\n0.900 0.340 0.040\n");
+        var json = JSON.replace("\"obstacles\": []", "\"obstaclesFile\": \"obstacles.txt\", \"obstacles\": []");
+        var config = new ConfigLoader().load(write(json));
+        assertEquals(2, config.obstacles().size());
+        assertEquals(0.300, config.obstacles().get(0).x());
+        assertEquals(0.040, config.obstacles().get(1).radius());
+    }
+
+    @Test
+    void rejectsObstaclesFileCombinedWithNonEmptyInlineObstacles() throws IOException {
+        Files.writeString(directory.resolve("obstacles.txt"), "0.300 0.340 0.040\n");
+        var json = JSON.replace("\"obstacles\": []",
+                "\"obstaclesFile\": \"obstacles.txt\", \"obstacles\": [{\"x\":0.6,\"y\":0.34,\"radius\":0.05}]");
+        assertThrows(IOException.class, () -> new ConfigLoader().load(write(json)));
+    }
+
+    @Test
+    void rejectsMalformedObstaclesFileLine() throws IOException {
+        Files.writeString(directory.resolve("obstacles.txt"), "0.300 0.340\n");
+        var json = JSON.replace("\"obstacles\": []", "\"obstaclesFile\": \"obstacles.txt\", \"obstacles\": []");
+        assertThrows(IOException.class, () -> new ConfigLoader().load(write(json)));
+    }
 }

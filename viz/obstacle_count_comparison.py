@@ -42,6 +42,7 @@ RETRIES = 5
 
 def build_config(base, obstacles, seed):
     cfg = json.loads(json.dumps(base))
+    cfg.pop("obstaclesFile", None)  # esta corrida fija sus propios obstaculos inline
     cfg["simulation"]["maxTime"] = MAX_TIME
     cfg["simulation"]["seed"] = seed
     cfg["particles"]["count"] = N

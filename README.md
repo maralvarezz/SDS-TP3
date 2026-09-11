@@ -158,9 +158,37 @@ Ejecutar Java desde la raíz del repositorio, sin argumentos: lee `input/config.
 y escribe en `output/`. En IntelliJ, ejecutar `ar.edu.itba.sds.tp3.Main` con la raíz
 del repositorio como directorio de trabajo y sin argumentos de programa.
 
-El JSON actual usa 30 partículas y tres obstáculos para inspección visual.
-Los experimentos de los puntos 1.2 en adelante requieren volver a N=100.
-La generación sigue la Teórica 3, diapositiva 10: muestreo secuencial por rechazo,
+El JSON actual usa la configuración de competencia (punto 1.4): N=100,
+tmax=100 s y un único obstáculo centrado, cargado desde `input/obstacles.txt`
+mediante `obstaclesFile` (ver más abajo). Los scripts de `viz/` que exploran
+otras configuraciones (`execution_time.py`, `obstacle_count_comparison.py`,
+`diffusion.py`, `competition_search.py`) sobrescriben `input/config.json`
+temporalmente por corrida y restauran su contenido original al finalizar.
+
+### Obstáculos: array inline o `obstaclesFile`
+
+Los obstáculos pueden definirse de dos formas, mutuamente excluyentes si el
+array `obstacles` no está vacío:
+
+1. **Inline**, como antes: `"obstacles": [{"x": .., "y": .., "radius": ..}, ...]`.
+2. **Archivo externo** (`"obstaclesFile": "obstacles.txt"`, `"obstacles": []`):
+   `ConfigLoader` resuelve la ruta relativa al directorio de `config.json` y lee
+   un archivo de texto plano con una línea por obstáculo, formato `"x y radius"`
+   separado por espacios — exactamente el formato de entrega que exige el
+   enunciado para la competencia (punto 24). Así `input/obstacles.txt` es a la
+   vez el origen de los obstáculos usados en la simulación y el artefacto a
+   entregar, sin duplicar la configuración en dos lugares. `viz/export_obstacles.py`
+   copia (o genera, si los obstáculos son inline) ese archivo a
+   `competition_config.txt` en la raíz, listo para renombrar según la
+   convención de entrega (`SdS_TP3_2026Q2GXXCSS_Config.txt`).
+
+Combinar `obstaclesFile` con un array `obstacles` no vacío es un error de
+configuración explícito (`IOException`), para no tener dos fuentes de verdad
+simultáneas. La metadata de cada corrida siempre registra los obstáculos ya
+resueltos (`obstacles`), sin importar cuál de los dos mecanismos se usó; el
+contrato Java-Python no cambia.
+
+La generación inicial sigue la Teórica 3, diapositiva 10: muestreo secuencial por rechazo,
 sin solapamientos. Se limita a 100 000 intentos por partícula; agotar el límite
 aborta la inicialización y no prueba que la configuración sea geométricamente imposible.
 La semilla se define en `simulation.seed` dentro del JSON como entero de 64 bits.
@@ -199,10 +227,10 @@ de la cola y ciclo de eventos, incluyendo escritura CSV durante el ciclo. Excluy
 generación de partículas, apertura de archivos y escritura final de metadatos y
 resumen. Este observable no controla el tiempo simulado.
 
-Las pruebas de la primera iteración se conservan; por indicación del usuario no
-se agregan nuevos tests ni se ejecuta Maven. `InitialStateWriter` se conserva como
-utilidad de exportación inicial usada por esas pruebas; la CLI usa `OutputManager`.
-Queda pendiente validar el motor en ejecución antes de usar resultados experimentales.
+El motor compila (`mvn clean package`) y fue validado en ejecución: los
+experimentos de los puntos 1.1, 1.2, 1.3 y 1.4 corrieron sobre él.
+`InitialStateWriter` se conserva como utilidad de exportación inicial usada
+por las pruebas de la primera iteración; la CLI usa `OutputManager`.
 
 El empaquetado del JAR con dependencias usa el
 [patrón oficial de Maven Shade](https://maven.apache.org/plugins/maven-shade-plugin/examples/executable-jar.html).
