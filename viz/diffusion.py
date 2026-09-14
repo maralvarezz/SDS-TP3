@@ -175,7 +175,6 @@ def plot_msd(name, grid, msd, runs, fit):
     for times, run_msd in runs:
         ax.plot(times, run_msd, color="0.75", linewidth=0.8)
     ax.plot(grid, msd, color="tab:blue", label=f"DCM(t) promedio ({len(runs)} realizaciones)")
-    ax.axhline(plateau, color="0.4", linestyle=":", linewidth=1, label=f"plateau={plateau:.4f} m^2")
     fit_ts = np.array([lo, hi])
     ax.plot(fit_ts, slope * fit_ts + intercept, color="tab:red", linestyle="--",
             label=f"ajuste [{lo:.1f}, {hi:.1f}] s: D={d:.6f} m^2/s")
