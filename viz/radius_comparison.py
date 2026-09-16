@@ -1,19 +1,26 @@
-"""Punto 1.2: metodologia "n obstaculos de area total fija con n creciente".
+"""Punto 1.2: continua la exploracion de configuration_comparison.py.
 
-Compara <t90> para K=1, K=2 y K=3 obstaculos que en conjunto conservan la misma
-area total que el mejor obstaculo unico encontrado en configuration_comparison.py
-(R=0.15 m, centrado en x=L/2). Se ubican simetricamente sobre el eje longitudinal,
-centrados en y=W/2, respetando las restricciones del enunciado:
+Esa corrida barrio la posicion x de un unico obstaculo (K=1) con R=0.15 fijo,
+y encontro que x=L/2=0.60 m (centrado) minimiza <t90>. Este script fija esa
+posicion (x=L/2, y=W/2) y barre el radio R, para ver si el resultado mejora
+mas variando el tamano del obstaculo.
 
-i.  K obstaculos integramente dentro del dominio y sin solaparse entre si.
-ii. Rk >= r y tal que permita la generacion de las N particulas.
+Restriccion (ii) del enunciado: Rk >= r y tal que permita la generacion de
+las N particulas. r=0.0175 m (input/config.json). Se verifica ademas, para
+cada R candidato, la restriccion (i) de contencion: con el obstaculo
+centrado en y=W/2, la cota "Rk <= yk <= W - Rk" exige R <= W/2 = 0.34 m; por
+eso el barrido no llega a ese valor (se detiene en R=0.335, ya verificado
+empiricamente que sigue permitiendo generar las 100 particulas).
 
-La mesa vacia (K=0) es solo la referencia de comparacion, no una configuracion
-explorada (esas requieren K>0).
+N=100, maxTime=100s (mismos parametros que configuration_comparison.py, ver
+ese script para la justificacion de tmax). La mesa vacia se recalcula en esta
+misma corrida (no se reutiliza el valor de otro script) para que la
+comparacion sea internamente consistente.
 
-Java no conoce este experimento ni recibe argumentos por linea de comando: cada
-corrida se dispara reescribiendo la unica fuente de verdad, input/config.json, y
-ejecutando el jar sin argumentos. El config original se restaura al final.
+Java no conoce este experimento ni recibe argumentos por linea de comando:
+cada corrida se dispara reescribiendo la unica fuente de verdad,
+input/config.json, y ejecutando el jar sin argumentos. El config original se
+restaura al final.
 """
 import json
 import subprocess
@@ -25,7 +32,6 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from obstacle_layouts import TOTAL_AREA_RADIUS, layout, validate_layout
 import fu_curves
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -35,10 +41,20 @@ OUTPUT = ROOT / "output"
 
 N = 100
 MAX_TIME = 100.0
-K_VALUES = [1, 2, 3]
-REALIZATIONS = 5
-BASE_SEED = 20260920
+BEST_X = 0.60  # encontrado en configuration_comparison.py (x-sweep con R=0.15)
+R_VALUES = [0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.325, 0.335]
+REALIZATIONS = 10
+BASE_SEED = 20261200
 RETRIES = 5
+
+
+def validate_radius(r, length, width, x, y, particle_radius):
+    # Restriccion (ii): Rk >= r.
+    if r < particle_radius:
+        raise ValueError(f"Restriccion (ii) violada: R={r} < r={particle_radius}")
+    # Restriccion (i): obstaculo integramente dentro del dominio.
+    if not (r <= x <= length - r and r <= y <= width - r):
+        raise ValueError(f"Restriccion (i) violada (fuera de dominio): x={x}, y={y}, R={r}")
 
 
 def build_config(base, obstacles, seed, write_goals=False):
@@ -101,8 +117,9 @@ def realize():
     length = base["simulation"]["length"]
     width = base["simulation"]["width"]
     particle_radius = base["particles"]["radius"]
+    y = width / 2
 
-    results = {"empty": [], "k": {}}
+    results = {"empty": [], "radii": {}}
     for i in range(REALIZATIONS):
         seed = BASE_SEED + i
         print(f"mesa vacia realizacion {i + 1}/{REALIZATIONS} seed={seed}")
@@ -112,57 +129,58 @@ def realize():
         if i == 0:
             fu_curves.save_curve("mesa_vacia", directory, metadata)
 
-    for k in K_VALUES:
-        obstacles = layout(k, length, width)
-        validate_layout(obstacles, length, width, particle_radius)
-        print(f"K={k}: R={obstacles[0]['radius']:.4f} m, centros x={[round(o['x'], 4) for o in obstacles]}")
+    for r in R_VALUES:
+        validate_radius(r, length, width, BEST_X, y, particle_radius)
+        obstacles = [{"x": BEST_X, "y": y, "radius": r}]
         runs = []
         for i in range(REALIZATIONS):
-            seed = BASE_SEED + k * 1000 + i
-            print(f"K={k} realizacion {i + 1}/{REALIZATIONS} seed={seed}")
+            seed = BASE_SEED + int(round(r * 10000)) + i
+            print(f"R={r} realizacion {i + 1}/{REALIZATIONS} seed={seed}")
             metadata, directory = run_with_retries(base, obstacles, seed, write_goals=(i == 0))
             runs.append(metadata)
             print(f"  t90={metadata['t90']}")
             if i == 0:
-                fu_curves.save_curve(f"K={k}", directory, metadata)
-        results["k"][k] = runs
+                fu_curves.save_curve(f"R={r}", directory, metadata)
+        results["radii"][r] = runs
     return results
 
 
 def plot(results):
     empty_mean, empty_std, empty_n = t90_stats(results["empty"], "mesa vacia")
-    ks, means, stds, counts = [], [], [], []
-    for k in K_VALUES:
-        m, s, n = t90_stats(results["k"][k], f"K={k}")
+    rs, means, stds, counts = [], [], [], []
+    for r in R_VALUES:
+        m, s, n = t90_stats(results["radii"][r], f"R={r}")
         if m is None:
             continue
-        ks.append(k)
+        rs.append(r)
         means.append(m)
         stds.append(s)
         counts.append(n)
 
-    fig, ax = plt.subplots(figsize=(7, 4.5))
-    ax.errorbar(ks, means, yerr=stds, fmt="o-", capsize=4, color="tab:blue",
-                label=f"K obstaculos, area total fija (pi*{TOTAL_AREA_RADIUS}^2 m^2)")
+    fig, ax = plt.subplots(figsize=(7.5, 4.5))
+    ax.errorbar(rs, means, yerr=stds, fmt="o-", capsize=4, color="tab:blue",
+                label=f"Obstaculo unico (K=1, x={BEST_X} m, y=W/2)")
     if empty_mean is not None:
         ax.axhline(empty_mean, color="0.4", linestyle="--", label=f"Mesa vacia (<t90>={empty_mean:.2f} s)")
         ax.axhspan(empty_mean - empty_std, empty_mean + empty_std, color="0.4", alpha=0.15)
-    ax.set(xlabel="K (numero de obstaculos)", ylabel="<t90> [s]",
-           title=f"Punto 1.2 - <t90> vs K, area total fija (N={N})")
-    ax.set_xticks(ks)
+    ax.set(xlabel="Radio del obstaculo R [m]", ylabel="<t90> [s]",
+           title=f"Punto 1.2 - <t90> vs radio del obstaculo (x={BEST_X} m fijo, N={N})")
     ax.grid(alpha=0.25)
     ax.legend()
     folder = OUTPUT / "experiment_1_2_plots"
     folder.mkdir(parents=True, exist_ok=True)
     fig.tight_layout()
-    path = folder / f"obstacle_count_comparison_{datetime.now(timezone.utc):%Y%m%d_%H%M%S}.png"
+    path = folder / f"radius_comparison_{datetime.now(timezone.utc):%Y%m%d_%H%M%S}.png"
     fig.savefig(path, dpi=160)
     plt.close(fig)
     print(path)
-    for k, m, s, n in zip(ks, means, stds, counts):
-        print(f"K={k}: <t90>={m:.3f} s, std={s:.3f} s, n={n}")
+    for r, m, s, n in zip(rs, means, stds, counts):
+        print(f"R={r}: <t90>={m:.3f} s, std={s:.3f} s, n={n}")
     if empty_mean is not None:
         print(f"mesa vacia: <t90>={empty_mean:.3f} s, std={empty_std:.3f} s, n={empty_n}")
+    if rs:
+        best = min(range(len(rs)), key=lambda i: means[i])
+        print(f"Mejor radio explorado: R={rs[best]} con <t90>={means[best]:.3f} s")
     return path
 
 
