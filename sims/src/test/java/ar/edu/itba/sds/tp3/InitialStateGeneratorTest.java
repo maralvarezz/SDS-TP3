@@ -60,4 +60,35 @@ class InitialStateGeneratorTest {
         var error = assertThrows(IllegalArgumentException.class, () -> new InitialStateGenerator().generate(config));
         assertTrue(error.getMessage().contains("Seed: 9"));
     }
+
+    @Test
+    void fixedPositionsAreUsedVerbatimWithRandomVelocityDirections() {
+        var config = new SimulationConfig(new SimulationParameters(1, 1, 0.2, 1, 9L),
+                new ParticleParameters(2, 0.1, 1, 1),
+                new OutputParameters(1, true, false, false), List.of());
+        var positions = List.of(new Vector2D(0.2, 0.2), new Vector2D(0.8, 0.8));
+        var state = new InitialStateGenerator().generate(config, positions);
+        assertEquals(new Vector2D(0.2, 0.2), state.particles().get(0).position());
+        assertEquals(new Vector2D(0.8, 0.8), state.particles().get(1).position());
+        for (var p : state.particles()) {
+            assertEquals(1, p.velocity().magnitude(), 1e-12);
+        }
+    }
+
+    @Test
+    void overlappingFixedPositionsAreRejected() {
+        var config = new SimulationConfig(new SimulationParameters(1, 1, 0.2, 1, 9L),
+                new ParticleParameters(2, 0.1, 1, 1),
+                new OutputParameters(1, true, false, false), List.of());
+        var overlapping = List.of(new Vector2D(0.5, 0.5), new Vector2D(0.55, 0.5));
+        assertThrows(IllegalArgumentException.class,
+                () -> new InitialStateGenerator().generate(config, overlapping));
+    }
+
+    @Test
+    void positionCountMustMatchParticlesCount() {
+        var config = config(List.of());
+        assertThrows(IllegalArgumentException.class,
+                () -> new InitialStateGenerator().generate(config, List.of(new Vector2D(0.5, 0.34))));
+    }
 }

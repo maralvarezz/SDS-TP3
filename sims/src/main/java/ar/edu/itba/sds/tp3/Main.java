@@ -1,6 +1,7 @@
 package ar.edu.itba.sds.tp3;
 
 import ar.edu.itba.sds.tp3.config.ConfigLoader;
+import ar.edu.itba.sds.tp3.config.InitialPositionsLoader;
 import ar.edu.itba.sds.tp3.output.OutputManager;
 import ar.edu.itba.sds.tp3.simulation.InitialStateGenerator;
 import ar.edu.itba.sds.tp3.simulation.Simulation;
@@ -23,7 +24,8 @@ public final class Main {
             if (config.simulation().seed() == null) {
                 config = config.withSeed(new Random().nextLong());
             }
-            var state = new InitialStateGenerator().generate(config);
+            var initialPositions = InitialPositionsLoader.loadIfPresent(configPath);
+            var state = new InitialStateGenerator().generate(config, initialPositions);
             try (var output = new OutputManager(outputPath, configPath, config)) {
                 System.out.println("Simulando " + state.particles().size() + " particulas, seed=" + config.simulation().seed());
                 System.out.println("Archivos: " + output.directory().toAbsolutePath());
