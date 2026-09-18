@@ -23,6 +23,18 @@ ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "output"
 CURVES_PATH = OUTPUT / "experiment_1_2_plots" / "fu_curves.json"
 
+# Color fijo por configuracion, compartido por el grafico conjunto de Fu(t) y
+# por los graficos individuales (1.2 y 1.3), para que cada configuracion se
+# vea igual en todos lados. Etiquetas nuevas usan el ciclo por defecto.
+CONFIG_COLORS = {
+    "mesa_vacia": "tab:blue",
+    "x=0.6": "tab:orange",
+    "embudo_r=0.02": "tab:green",
+    "R=0.339": "tab:red",
+    "embudo_asimetrico_shift=0.0": "tab:purple",
+    "paragolpes_r=0.02": "tab:brown",
+}
+
 
 def _fu_curve(run, metadata):
     data = list(rows(one_file(run, "goals_*.csv")))
@@ -68,7 +80,7 @@ def plot_curves(labels=None, name="comparison"):
     fig, ax = plt.subplots(figsize=(8, 5))
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     for i, (label, curve) in enumerate(curves.items()):
-        color = colors[i % len(colors)]
+        color = CONFIG_COLORS.get(label, colors[i % len(colors)])
         ax.step(curve["times"], curve["fractions"], where="post", label=label, color=color)
         if curve.get("t90") is not None:
             ax.axvline(curve["t90"], linestyle=":", color=color, alpha=0.5)
