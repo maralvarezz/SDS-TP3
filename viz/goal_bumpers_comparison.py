@@ -126,7 +126,16 @@ def realize():
     goal_size = base["simulation"]["goalSize"]
     particle_radius = base["particles"]["radius"]
 
-    results = {}
+    results = {"empty": []}
+    for i in range(REALIZATIONS):
+        seed = BASE_SEED + i
+        print(f"mesa vacia realizacion {i + 1}/{REALIZATIONS} seed={seed}")
+        metadata, directory = run_with_retries(base, [], seed, write_goals=(i == 0))
+        results["empty"].append(metadata)
+        print(f"  t90={metadata['t90']}")
+        if i == 0:
+            fu_curves.save_curve("mesa_vacia", directory, metadata)
+
     for r_end in END_RADII:
         obstacles = layout(r_end, length, width, goal_size)
         validate_layout(obstacles, length, width, particle_radius)
@@ -145,6 +154,7 @@ def realize():
 
 
 def plot(results):
+    empty_mean, empty_std, empty_n = t90_stats(results["empty"], "mesa vacia")
     rs, means, stds, counts = [], [], [], []
     for r_end in END_RADII:
         m, s, n = t90_stats(results[r_end], f"r_end={r_end}")
@@ -158,6 +168,9 @@ def plot(results):
     fig, ax = plt.subplots(figsize=(7.5, 4.5))
     ax.errorbar(rs, means, yerr=stds, fmt="o-", capsize=4, color="tab:brown",
                 label=f"Circulo grande (R={BIG_RADIUS}) + 4 paragolpes de arco")
+    if empty_mean is not None:
+        ax.axhline(empty_mean, color="tab:blue", linestyle="--", label=f"Mesa vacia (<t90>={empty_mean:.2f} s)")
+        ax.axhspan(empty_mean - empty_std, empty_mean + empty_std, color="tab:blue", alpha=0.15)
     ax.set(xlabel="Radio de los paragolpes [m]", ylabel="<t90> [s]",
            title=f"Punto 1.2 - Paragolpes de arco (N={N})")
     ax.grid(alpha=0.25)
@@ -171,6 +184,8 @@ def plot(results):
     print(path)
     for r_end, m, s, n in zip(rs, means, stds, counts):
         print(f"r_end={r_end}: <t90>={m:.3f} s, std={s:.3f} s, n={n}")
+    if empty_mean is not None:
+        print(f"mesa vacia: <t90>={empty_mean:.3f} s, std={empty_std:.3f} s, n={empty_n}")
     if rs:
         best = min(range(len(rs)), key=lambda i: means[i])
         print(f"Mejor radio de paragolpes explorado: r_end={rs[best]} con <t90>={means[best]:.3f} s")

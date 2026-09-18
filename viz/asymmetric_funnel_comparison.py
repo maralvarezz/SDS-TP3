@@ -123,7 +123,16 @@ def realize():
     width = base["simulation"]["width"]
     particle_radius = base["particles"]["radius"]
 
-    results = {}
+    results = {"empty": []}
+    for i in range(REALIZATIONS):
+        seed = BASE_SEED + i
+        print(f"mesa vacia realizacion {i + 1}/{REALIZATIONS} seed={seed}")
+        metadata, directory = run_with_retries(base, [], seed, write_goals=(i == 0))
+        results["empty"].append(metadata)
+        print(f"  t90={metadata['t90']}")
+        if i == 0:
+            fu_curves.save_curve("mesa_vacia", directory, metadata)
+
     for shift in SHIFTS:
         obstacles = layout(shift, length, width)
         validate_layout(obstacles, length, width, particle_radius)
@@ -142,6 +151,7 @@ def realize():
 
 
 def plot(results):
+    empty_mean, empty_std, empty_n = t90_stats(results["empty"], "mesa vacia")
     shifts, means, stds, counts = [], [], [], []
     for shift in SHIFTS:
         m, s, n = t90_stats(results[shift], f"shift={shift}")
@@ -153,8 +163,11 @@ def plot(results):
         counts.append(n)
 
     fig, ax = plt.subplots(figsize=(7.5, 4.5))
-    ax.errorbar(shifts, means, yerr=stds, fmt="o-", capsize=4, color="tab:orange",
+    ax.errorbar(shifts, means, yerr=stds, fmt="o-", capsize=4, color="tab:purple",
                 label=f"Embudo desplazado (R={BIG_RADIUS}, r={SMALL_RADIUS})")
+    if empty_mean is not None:
+        ax.axhline(empty_mean, color="tab:blue", linestyle="--", label=f"Mesa vacia (<t90>={empty_mean:.2f} s)")
+        ax.axhspan(empty_mean - empty_std, empty_mean + empty_std, color="tab:blue", alpha=0.15)
     ax.set(xlabel="Desplazamiento hacia el arco x=0 [m]", ylabel="<t90> [s]",
            title=f"Punto 1.2 - Embudo asimetrico vs desplazamiento (N={N})")
     ax.grid(alpha=0.25)
@@ -168,6 +181,8 @@ def plot(results):
     print(path)
     for shift, m, s, n in zip(shifts, means, stds, counts):
         print(f"shift={shift}: <t90>={m:.3f} s, std={s:.3f} s, n={n}")
+    if empty_mean is not None:
+        print(f"mesa vacia: <t90>={empty_mean:.3f} s, std={empty_std:.3f} s, n={empty_n}")
     if shifts:
         best = min(range(len(shifts)), key=lambda i: means[i])
         print(f"Mejor desplazamiento explorado: shift={shifts[best]} con <t90>={means[best]:.3f} s")
