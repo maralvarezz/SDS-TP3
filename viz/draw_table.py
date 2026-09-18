@@ -61,7 +61,7 @@ def _label_obstacle_radius(ax, index, obstacle, count):
     ax.text(x + r / 2, y + 0.008, f"${name}$", ha="center", va="bottom", fontsize=9, zorder=5)
 
 
-def draw_table(config, ax=None, show_radius=True):
+def draw_table(config, ax=None, show_radius=True, title=None):
     sim = config["simulation"]
     length, width, goal = sim["length"], sim["width"], sim["goalSize"]
     obstacles = config.get("obstacles", [])
@@ -108,6 +108,8 @@ def draw_table(config, ax=None, show_radius=True):
     ax.set_ylim(-0.19, width + 0.06)
     ax.set_aspect("equal")
     ax.axis("off")
+    if title:
+        ax.set_title(title, fontsize=13)
     return fig, ax
 
 

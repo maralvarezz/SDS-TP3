@@ -58,6 +58,7 @@ import matplotlib.pyplot as plt
 
 import asymmetric_funnel_comparison as asymmetric_exp
 import configuration_comparison as position_exp
+import corridor_comparison as corridor_exp
 import flanking_circles_comparison as flanking_exp
 import fu_curves
 import goal_bumpers_comparison as bumpers_exp
@@ -93,6 +94,7 @@ BUILDERS = {
         {"x": length / 2, "y": width / 2, "radius": BEST_RADIUS}],
     "embudo_asimetrico_shift=0.0": lambda length, width, goal: asymmetric_exp.layout(0.0, length, width),
     "paragolpes_r=0.02": lambda length, width, goal: bumpers_exp.layout(0.02, length, width, goal),
+    "pasillo_r=0.03": lambda length, width, goal: corridor_exp.layout(0.03, length, width),
 }
 CONFIGS = list(BUILDERS)
 
