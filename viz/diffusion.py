@@ -8,10 +8,7 @@ verificar si hay correlacion entre D y <t90>.
 Configuraciones estudiadas: las mejores de cada metodologia del punto 1.2
 (mismas etiquetas y colores que el grafico conjunto de Fu(t), ver
 fu_curves.CONFIG_COLORS). Sus obstaculos se toman de los propios scripts de
-1.2 para no duplicar las definiciones. Nota: "embudo_asimetrico_shift=0.0" es
-geometricamente identico a "embudo_r=0.02" (desplazamiento nulo); se lo
-incluye por ser la mejor de su metodologia y sirve de chequeo de
-reproducibilidad de D.
+1.2 para no duplicar las definiciones.
 
 Metodologia segun docs/Teorica_0.pdf (slide 38, "Difusion: Random Walk"):
 
@@ -56,7 +53,6 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-import asymmetric_funnel_comparison as asymmetric_exp
 import configuration_comparison as position_exp
 import corridor_comparison as corridor_exp
 import flanking_circles_comparison as flanking_exp
@@ -77,14 +73,12 @@ REALIZATIONS = 10
 BASE_SEED = 20270000
 GRID_POINTS = 500
 
-# Ventana de ajuste lineal como fraccion del valor de saturacion (ver docstring).
 FIT_LOW_FRACTION = 0.15
 FIT_HIGH_FRACTION = 0.65
 PLATEAU_TAIL_FRACTION = 0.20
 
-BEST_RADIUS = 0.339  # mejor radio del barrido fino de radius_comparison.py
+BEST_RADIUS = 0.339
 
-# etiqueta -> (largo, ancho, tamano de arco) -> obstaculos
 BUILDERS = {
     "mesa_vacia": lambda length, width, goal: [],
     "x=0.6": lambda length, width, goal: [
@@ -92,7 +86,6 @@ BUILDERS = {
     "embudo_r=0.02": lambda length, width, goal: flanking_exp.layout(0.02, length, width),
     "R=0.339": lambda length, width, goal: [
         {"x": length / 2, "y": width / 2, "radius": BEST_RADIUS}],
-    "embudo_asimetrico_shift=0.0": lambda length, width, goal: asymmetric_exp.layout(0.0, length, width),
     "paragolpes_r=0.02": lambda length, width, goal: bumpers_exp.layout(0.02, length, width, goal),
     "pasillo_r=0.03": lambda length, width, goal: corridor_exp.layout(0.03, length, width),
 }
@@ -163,7 +156,7 @@ def diffusion_coefficient(grid, msd):
     if mask.sum() < 2:
         raise ValueError(f"Ventana de ajuste sin suficientes puntos (plateau={plateau})")
     slope, intercept = np.polyfit(grid[mask], msd[mask], 1)
-    d = slope / 4  # convencion 2D: <z^2> = 4 D t (Teorica_0, slide 38)
+    d = slope / 4
     return d, slope, intercept, (grid[mask][0], grid[mask][-1])
 
 

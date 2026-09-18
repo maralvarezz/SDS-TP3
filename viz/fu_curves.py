@@ -31,7 +31,6 @@ CONFIG_COLORS = {
     "x=0.6": "tab:orange",
     "embudo_r=0.02": "tab:green",
     "R=0.339": "tab:red",
-    "embudo_asimetrico_shift=0.0": "tab:purple",
     "paragolpes_r=0.02": "tab:brown",
     "pasillo_r=0.03": "tab:pink",
 }

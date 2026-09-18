@@ -33,6 +33,7 @@ CONFIG_PATH = ROOT / "input" / "config.json"
 
 WALL_WIDTH = 2.6
 OBSTACLE_COLOR = "0.6"
+SMALL_OBSTACLE = 0.05  # radios menores: la etiqueta R_k se dibuja arriba del circulo
 
 
 def load_config(path):
@@ -58,7 +59,11 @@ def _label_obstacle_radius(ax, index, obstacle, count):
     x, y, r = obstacle["x"], obstacle["y"], obstacle["radius"]
     ax.plot([x, x + r], [y, y], color="black", linestyle=":", linewidth=1.1, zorder=4)
     name = "R_k" if count == 1 else f"R_{index + 1}"
-    ax.text(x + r / 2, y + 0.008, f"${name}$", ha="center", va="bottom", fontsize=9, zorder=5)
+    if r < SMALL_OBSTACLE:
+        # En obstaculos chicos la etiqueta no entra sobre el radio: va arriba del circulo.
+        ax.text(x, y + r + 0.008, f"${name}$", ha="center", va="bottom", fontsize=9, zorder=5)
+    else:
+        ax.text(x + r / 2, y + 0.008, f"${name}$", ha="center", va="bottom", fontsize=9, zorder=5)
 
 
 def draw_table(config, ax=None, show_radius=True, title=None):
