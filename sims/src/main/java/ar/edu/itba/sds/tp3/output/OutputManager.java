@@ -131,9 +131,9 @@ public final class OutputManager implements SimulationObserver, AutoCloseable {
     }
 
     public void finish(SimulationResult result) throws IOException {
-        var summary = open("summary", "seed,N,totalEvents,totalGoals,t90,runtimeMilliseconds");
+        var summary = open("summary", "seed,N,totalEvents,totalGoals,runtimeMilliseconds");
         summary.write(config.simulation().seed() + "," + config.particles().count() + "," + result.totalEvents()
-                + "," + result.totalGoals() + "," + (result.t90() == null ? "" : result.t90())
+                + "," + result.totalGoals()
                 + "," + result.runtimeMilliseconds());
         summary.newLine();
         for (var writer : writers) writer.flush();
@@ -141,7 +141,6 @@ public final class OutputManager implements SimulationObserver, AutoCloseable {
         metadata.put("finalTime", result.state().time());
         metadata.put("totalEvents", result.totalEvents());
         metadata.put("totalGoals", result.totalGoals());
-        metadata.put("t90", result.t90());
         metadata.put("runtimeMilliseconds", result.runtimeMilliseconds());
         writeMetadata();
     }

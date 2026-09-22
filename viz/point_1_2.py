@@ -2,6 +2,7 @@
 from datetime import datetime, timezone
 
 from common import latest_run, one_file, rows
+from observables import t90_from_goals
 
 import matplotlib
 matplotlib.use("Agg")
@@ -27,7 +28,7 @@ def goals_plot(run, metadata, folder):
     fig, ax = plt.subplots(figsize=(7, 4))
     ax.step(times, fractions, where="post", label="Fracción usada", color="tab:blue")
     ax.axhline(0.9, linestyle="--", color="0.5", label="90 %")
-    t90 = metadata.get("t90")
+    t90 = t90_from_goals(run)
     if t90 is not None:
         ax.axvline(t90, linestyle=":", color="tab:red", label=f"t90 = {t90:.3f} s")
     else:

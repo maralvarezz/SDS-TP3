@@ -57,6 +57,7 @@ import configuration_comparison as position_exp
 import corridor_comparison as corridor_exp
 import flanking_circles_comparison as flanking_exp
 import fu_curves
+from observables import t90_from_goals
 import goal_bumpers_comparison as bumpers_exp
 import radius_comparison as radius_exp
 from obstacle_layouts import validate_layout
@@ -100,7 +101,7 @@ def build_config(base, obstacles, seed):
     cfg["simulation"]["seed"] = seed
     cfg["particles"]["count"] = N
     cfg["output"] = {"everyEvents": EVERY_EVENTS, "writeStates": True,
-                      "writeGoals": False, "writeCollisions": False}
+                      "writeGoals": True, "writeCollisions": False}
     cfg["obstacles"] = obstacles
     return cfg
 
@@ -123,6 +124,7 @@ def run_once(base, obstacles, seed):
     metadata = json.loads(metadata_files[0].read_text(encoding="utf-8"))
     if metadata.get("status") != "COMPLETED":
         raise RuntimeError(f"Corrida no completada: {directory}")
+    metadata["t90"] = t90_from_goals(directory)
     return directory, metadata
 
 

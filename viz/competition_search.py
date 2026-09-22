@@ -21,6 +21,8 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+from observables import t90_from_goals
+
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "input" / "config.json"
 JAR = ROOT / "sims" / "target" / "sds_tp3_g8.jar"
@@ -47,7 +49,7 @@ def build_config(r, seed):
                         "maxTime": MAX_TIME, "seed": seed},
         "particles": {"count": N, "radius": PARTICLE_RADIUS, "mass": MASS, "initialSpeed": V0},
         "output": {"everyEvents": 1_000_000, "writeStates": False,
-                   "writeGoals": False, "writeCollisions": False},
+                   "writeGoals": True, "writeCollisions": False},
         "obstacles": [{"x": LENGTH / 2, "y": WIDTH / 2, "radius": r}],
     }
 
@@ -66,6 +68,7 @@ def run_once(r, seed):
     metadata = json.loads(metadata_files[0].read_text(encoding="utf-8"))
     if metadata.get("status") != "COMPLETED":
         raise RuntimeError(f"Corrida no completada: {directory}")
+    metadata["t90"] = t90_from_goals(directory)
     return metadata
 
 

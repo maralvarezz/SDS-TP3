@@ -57,7 +57,7 @@ def realize():
     for i in range(REALIZATIONS):
         seed = BASE_SEED + i
         print(f"mesa vacia realizacion {i + 1}/{REALIZATIONS} seed={seed}")
-        metadata, directory = runner.run_with_retries(base, [], seed, write_goals=(i == 0))
+        metadata, directory = runner.run_with_retries(base, [], seed)
         results["empty"].append(metadata)
         print(f"  t90={metadata['t90']}")
         if i == 0:
@@ -71,7 +71,7 @@ def realize():
         for i in range(REALIZATIONS):
             seed = BASE_SEED + int(round(rho * 10000)) + i
             print(f"rho={rho} realizacion {i + 1}/{REALIZATIONS} seed={seed}")
-            metadata, directory = runner.run_with_retries(base, obstacles, seed, write_goals=(i == 0))
+            metadata, directory = runner.run_with_retries(base, obstacles, seed)
             runs.append(metadata)
             print(f"  t90={metadata['t90']}")
             if i == 0:

@@ -33,8 +33,8 @@ public final class Main {
                     var result = new Simulation().run(config, state, output);
                     output.finish(result);
                     System.out.println("Tiempo simulado: " + result.state().time() + " s; colisiones: " + result.totalEvents());
-                    System.out.println("Goles: " + result.totalGoals() + "; t90: "
-                            + (result.t90() == null ? "no alcanzado" : result.t90() + " s"));
+                    System.out.println("Goles: " + result.totalGoals()
+                            + " (t90 se calcula en postproceso a partir de goals_*.csv)");
                 } catch (IOException | RuntimeException error) {
                     try { output.fail(error); } catch (IOException writeError) { error.addSuppressed(writeError); }
                     throw error;

@@ -21,7 +21,6 @@ public final class Simulation {
         var state = initial;
         long totalEvents = 0;
         int totalGoals = 0;
-        Double t90 = null;
         int sameTimeEvents = 0;
         observer.state(state, 0);
         while (true) {
@@ -50,14 +49,13 @@ public final class Simulation {
                 state = new SimulationState(state.time(), particles, state.obstacles());
                 totalGoals++;
                 double fraction = (double) totalGoals / state.particles().size();
-                if (t90 == null && fraction >= 0.9) t90 = state.time();
                 observer.goal(state.time(), totalEvents, particle.id(), event.wall(), totalGoals, fraction);
             }
             observer.collision(state, event, totalEvents);
             if (totalEvents % config.output().everyEvents() == 0) observer.state(state, totalEvents);
             queue.updateAfter(event, state);
         }
-        return new SimulationResult(state, totalEvents, totalGoals, t90,
+        return new SimulationResult(state, totalEvents, totalGoals,
                 (System.nanoTime() - started) / 1_000_000.0);
     }
 }

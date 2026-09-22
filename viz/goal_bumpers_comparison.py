@@ -35,6 +35,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 import fu_curves
+from observables import t90_from_goals
 from obstacle_layouts import validate_layout
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -64,7 +65,7 @@ def layout(r_end, length, width, goal_size):
     return obstacles
 
 
-def build_config(base, obstacles, seed, write_goals=False):
+def build_config(base, obstacles, seed):
     cfg = json.loads(json.dumps(base))
     cfg.pop("obstaclesFile", None)
     cfg.pop("initialPositionsFile", None)
@@ -72,13 +73,13 @@ def build_config(base, obstacles, seed, write_goals=False):
     cfg["simulation"]["seed"] = seed
     cfg["particles"]["count"] = N
     cfg["output"] = {"everyEvents": 1_000_000, "writeStates": False,
-                      "writeGoals": write_goals, "writeCollisions": False}
+                      "writeGoals": True, "writeCollisions": False}
     cfg["obstacles"] = obstacles
     return cfg
 
 
-def run_once(base, obstacles, seed, write_goals=False):
-    CONFIG_PATH.write_text(json.dumps(build_config(base, obstacles, seed, write_goals)), encoding="utf-8")
+def run_once(base, obstacles, seed):
+    CONFIG_PATH.write_text(json.dumps(build_config(base, obstacles, seed)), encoding="utf-8")
     result = subprocess.run(["java", "-jar", str(JAR)], cwd=ROOT, capture_output=True, text=True)
     if result.returncode != 0:
         raise RuntimeError(f"Corrida fallida (obstacles={obstacles}, seed={seed}): "
@@ -95,14 +96,15 @@ def run_once(base, obstacles, seed, write_goals=False):
     metadata = json.loads(metadata_files[0].read_text(encoding="utf-8"))
     if metadata.get("status") != "COMPLETED":
         raise RuntimeError(f"Corrida no completada: {directory}")
+    metadata["t90"] = t90_from_goals(directory)
     return metadata, directory
 
 
-def run_with_retries(base, obstacles, seed, write_goals=False):
+def run_with_retries(base, obstacles, seed):
     last_error = None
     for attempt in range(RETRIES):
         try:
-            return run_once(base, obstacles, seed + attempt * 7919, write_goals)
+            return run_once(base, obstacles, seed + attempt * 7919)
         except RuntimeError as error:
             last_error = error
             print(f"  intento {attempt + 1}/{RETRIES} fallo: {error}")
@@ -130,7 +132,7 @@ def realize():
     for i in range(REALIZATIONS):
         seed = BASE_SEED + i
         print(f"mesa vacia realizacion {i + 1}/{REALIZATIONS} seed={seed}")
-        metadata, directory = run_with_retries(base, [], seed, write_goals=(i == 0))
+        metadata, directory = run_with_retries(base, [], seed)
         results["empty"].append(metadata)
         print(f"  t90={metadata['t90']}")
         if i == 0:
@@ -144,7 +146,7 @@ def realize():
         for i in range(REALIZATIONS):
             seed = BASE_SEED + int(round(r_end * 10000)) + i
             print(f"r_end={r_end} realizacion {i + 1}/{REALIZATIONS} seed={seed}")
-            metadata, directory = run_with_retries(base, obstacles, seed, write_goals=(i == 0))
+            metadata, directory = run_with_retries(base, obstacles, seed)
             runs.append(metadata)
             print(f"  t90={metadata['t90']}")
             if i == 0:
