@@ -108,6 +108,9 @@ def main():
     finally:
         plt.close(fig)
         stream.close()
+    return path  # util para orquestar animaciones desde otro script (ver
+    # diffusion_animations.py), sin cambiar el comportamiento por linea de
+    # comandos existente
 
 
 if __name__ == "__main__":

@@ -43,8 +43,19 @@ La mesa (L=1.20 x W=0.68 m) es chica: el DCM satura por confinamiento en
 pocos segundos, muy antes de cualquier fraccion fija del tiempo total. Teorica_0
 no especifica una ventana de ajuste, asi que se la define en funcion del valor
 del DCM: entre FIT_LOW y FIT_HIGH fracciones del valor de saturacion (media del
-DCM sobre el ultimo PLATEAU_TAIL_FRACTION del tiempo simulado), evitando el
-arranque balistico y la zona ya saturada.
+DCM sobre el ultimo PLATEAU_TAIL_FRACTION del tiempo simulado), evitando la zona
+ya saturada.
+
+FIT_LOW_FRACTION=0 (no recorta el arranque) y FIT_HIGH_FRACTION=0.50 se
+eligieron comparando el R^2 del ajuste sobre los datos reales de una corrida
+para varias ventanas candidatas (0.15-0.65, 0.20-0.50, 0.15-0.50, 0-0.50).
+Contra la hipotesis inicial de que habia que recortar el arranque balistico
+(<z^2> ~ t^2 para t chico) para no sesgar la pendiente, sacar ese corte dio
+SIEMPRE mejor R^2 en las 4 configuraciones de 1.3 (ej. competencia_R=0.3:
+R^2=0.24 con 0.15-0.65 vs R^2=0.98 con 0-0.50): como el ajuste ya se fuerza
+por el origen (ver diffusion_coefficient) y el DCM real tambien arranca
+exactamente en (0,0) por construccion, incluir esos primeros puntos ancla
+mejor la recta en vez de sesgarla.
 
 Java no conoce este experimento ni recibe argumentos por linea de comando: cada
 corrida se dispara reescribiendo la unica fuente de verdad, input/config.json,
@@ -62,6 +73,7 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 
 import flanking_position_comparison as flanking_pos_exp
 import fu_curves
@@ -74,13 +86,21 @@ CONFIG_PATH = ROOT / "input" / "config.json"
 JAR = ROOT / "sims" / "target" / "sds_tp3_g8.jar"
 OUTPUT = ROOT / "output"
 
+
+def fmt2sf(x):
+    """Formatea un numero a 2 cifras significativas (D se reporta asi, no con
+    una cantidad fija de decimales -- con valores que van de ~0.003 a ~0.019
+    m^2/s, .6f mostraba 4-5 cifras significativas de mas)."""
+    return f"{x:.2g}"
+
+
 N = 100
 MAX_TIME = 100.0
 EVERY_EVENTS = 25
 BASE_SEED = 20270000
 
-FIT_LOW_FRACTION = 0.15
-FIT_HIGH_FRACTION = 0.65
+FIT_LOW_FRACTION = 0.0
+FIT_HIGH_FRACTION = 0.50
 PLATEAU_TAIL_FRACTION = 0.20
 
 BEST_RADIUS = 0.339
@@ -210,8 +230,8 @@ def plot_msd_all(results):
     for label in CONFIGS:
         r = results[label]
         color = fu_curves.CONFIG_COLORS[label]
-        ax.plot(r["times"], r["msd"], color=color, linewidth=1.6,
-                 label=f"{label} (D={r['d']:.6f} m^2/s)")
+        ax.plot(r["times"], r["msd"], color=color, linewidth=1.8,
+                 label=f"{label} (D={fmt2sf(r['d'])} m^2/s)")
         # La recta se dibuja desde el origen (no desde "lo"): el ajuste ya
         # fuerza el modelo <z^2>=4Dt por el origen (Teorica_0), asi que
         # arrancar el trazo en "lo" lo dejaba flotando en el medio de la
@@ -224,18 +244,24 @@ def plot_msd_all(results):
         _, hi = r["window"]
         fit_ts = np.array([0.0, hi])
         ax.plot(fit_ts, r["slope"] * fit_ts + r["intercept"], color=color,
-                 linestyle="--", linewidth=1.1, alpha=0.6, zorder=1)
-    # Recorta el eje x a la zona de ajuste (crecimiento balistico -> lineal),
-    # que es lo unico relevante para el punto 1.3 -- el resto de la corrida
-    # (particulas ya en el plateau de saturacion, sin nada mas que ajustar)
-    # no debe aparecer en el grafico, por pedido explicito de la correccion.
-    xmax = max(r["window"][1] for r in results.values())
-    ax.set_xlim(0, xmax * 1.5)
-    ax.set_ylim(bottom=0)  # sin esto matplotlib deja un margen y el origen
-    # (0,0), por donde pasan todas las rectas de ajuste, queda flotando en
-    # vez de coincidir con la esquina inferior izquierda del grafico
+                 linestyle="--", linewidth=2.2, alpha=0.75, zorder=1)
+    # Eje x fijo en 10s: bastante mas ancho que cualquier ventana de ajuste
+    # (todas quedan por debajo de ~2.5s), asi las rectas punteadas se ven
+    # claramente concentradas en la primera parte de la curva en vez de
+    # ocupar casi todo el ancho del grafico.
+    XLIM_MAX = 10.0
+    ax.set_xlim(0, XLIM_MAX)
+    # Recorta tambien el eje y al maximo DCM que realmente aparece dentro del
+    # rango de tiempo mostrado (antes quedaba fijado por el valor de
+    # saturacion de mesa vacia a t=100s, muy por encima de lo que se ve en
+    # este recorte de x, dejando el grafico vacio arriba).
+    ymax = max(r["msd"][r["times"] <= XLIM_MAX].max() for r in results.values())
+    ax.set_ylim(0, ymax * 1.08)  # el 0 explicito ancla el origen (0,0) --
+    # por donde pasan todas las rectas de ajuste -- a la esquina inferior
+    # izquierda, en vez del margen automatico de matplotlib
     ax.set(xlabel="Tiempo simulado [s]", ylabel="DCM [m^2]",
            title="Punto 1.3 - DCM(t) por configuracion (una realizacion)")
+    ax.yaxis.set_major_locator(MaxNLocator(nbins=12))  # mas marcas en el eje y
     ax.grid(alpha=0.25)
     ax.legend(fontsize=8)
     folder = OUTPUT / "experiment_1_3_plots"
@@ -285,7 +311,7 @@ def main():
             print(f"{label}: obstaculos={obstacles}")
             results[label] = run_config(base, label, obstacles, c)
             r = results[label]
-            print(f"  D={r['d']:.6f} m^2/s (ventana {r['window'][0]:.1f}-{r['window'][1]:.1f} s), "
+            print(f"  D={fmt2sf(r['d'])} m^2/s (ventana {r['window'][0]:.1f}-{r['window'][1]:.1f} s), "
                   f"t90={r['t90']:.3f} s")
         plot_msd_all(results)
         plot_correlation(results)
@@ -294,7 +320,7 @@ def main():
         print("\nResumen:")
         for label in CONFIGS:
             r = results[label]
-            print(f"  {label}: D={r['d']:.6f} m^2/s, t90={r['t90']:.3f} s")
+            print(f"  {label}: D={fmt2sf(r['d'])} m^2/s, t90={r['t90']:.3f} s")
         print(f"Correlacion de Pearson D vs t90 ({len(CONFIGS)} configuraciones): "
               f"r={np.corrcoef(ds, ts)[0, 1]:.3f}")
     finally:

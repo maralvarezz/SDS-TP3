@@ -57,7 +57,8 @@ def plot(rsa_runtimes, hex_runtimes):
 
     ax.set(xlabel="N (particulas)", ylabel="Tiempo de ejecucion [ms]",
            title="Punto 1.1 - Tiempo de ejecucion vs N (mesa vacia, tf=30s)")
-    ax.grid(alpha=0.25)
+    ax.set_yscale("log")
+    ax.grid(alpha=0.25, which="both")
     ax.legend()
     folder = OUTPUT / "experiment_1_1_plots"
     folder.mkdir(parents=True, exist_ok=True)
