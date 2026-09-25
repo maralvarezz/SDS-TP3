@@ -38,7 +38,7 @@ GOAL_SIZE = 0.20
 MAX_TIME = 100.0
 
 R_VALUES = [0.30, 0.31, 0.32, 0.33]
-REALIZATIONS = 10
+REALIZATIONS = 5  # minimo del enunciado para el punto 1.2
 BASE_SEED = 20261940
 RETRIES = 5
 

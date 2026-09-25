@@ -1,21 +1,39 @@
-"""Punto 1.2: arreglo tipo "embudo hacia los arcos" (una de las metodologias
-sugeridas en el enunciado): un circulo grande centrado en la mesa (x=L/2,
-y=W/2), con el mejor radio ya encontrado en radius_comparison.py (R=0.335),
-mas dos circulos iguales a los costados, tangentes al circulo grande y
-centrados tambien en y=W/2, cerca de cada arco.
+"""Punto 1.2: familia "competencia" -- dos semicirculos libres frente a cada
+arco (centrados en (0, W/2) y (L, W/2)) y el resto de la mesa cubierto por un
+relleno de obstaculos chicos empaquetados hexagonalmente (ver
+filler_layout.py para el detalle geometrico y la justificacion de por que
+esto alcanza para bloquear la generacion de particulas fuera de los
+semicirculos, via el propio RSA de InitialStateGenerator.java).
 
-Se barre el radio r de los dos circulos chicos (iguales entre si) para ver
-si mejora <t90> respecto de usar solo el circulo grande. Restricciones:
+Se barre el radio de los semicirculos libres (free_radius): a mayor
+free_radius, menos relleno hace falta y mas area queda disponible para las
+N=100 particulas; a menor free_radius, el relleno crece y el RSA tarda mas
+en poder ubicar a todas las particulas (o directamente no puede).
 
-i.  K=3 obstaculos integramente dentro del dominio y sin solaparse entre si.
-    Con el circulo grande tangente a las paredes horizontales y centrado en
-    x=L/2, los circulos chicos tangentes a el quedan en
-    x = L/2 -+ (R_big + r); la restriccion de contencion (Rk<=xk<=L-Rk) fija
-    el maximo geometrico: r <= (L/2 - R_big) / 2.
-ii. Rk >= r_particula y que permita generar las N particulas (se verifica
-    empiricamente antes de correr el experimento completo).
+Rango de free_radius usado: se corrio un chequeo de factibilidad en Python
+puro (replicando el algoritmo de RSA de Java sin necesitar el motor) para
+elegir el rango sin necesidad de gastar corridas Java en configuraciones
+que fueran a fallar:
+  - free_radius <= 0.22 m: el RSA no siempre logra ubicar las 100 particulas
+    dentro del limite de 100_000 intentos por particula (falla tipicamente
+    entre la particula 60 y 95 de 100).
+  - free_radius >= 0.24 m: el RSA ubica las 100 particulas de forma holgada
+    (unos pocos miles de intentos totales como mucho, muy por debajo del
+    limite).
+  - free_radius <= 0.32 m: el semicirculo se mantiene a mas de 0.02 m de las
+    paredes horizontales (W/2 = 0.34 m), sin tocarlas.
+Por eso el barrido usa el rango [0.24, 0.32] m.
+
+Restriccion (ii) (Rk >= r y permite generar las N particulas) verificada
+para filler_radius=0.02 y todo el rango de free_radius de este script; ver
+docstring de filler_layout.py.
 
 N=100, maxTime=100s (mismos parametros que el resto de los scripts de 1.2).
+Cada configuracion tiene ~300-400 obstaculos de relleno, mucho mas que el
+resto de las familias de 1.2, asi que cada corrida Java es bastante mas
+lenta por la cantidad de eventos particula-obstaculo. Se usa el minimo de
+5 realizaciones del enunciado (en vez de mas) para no alargar demasiado el
+tiempo de corrida.
 
 Java no conoce este experimento ni recibe argumentos por linea de comando:
 cada corrida se dispara reescribiendo la unica fuente de verdad,
@@ -35,6 +53,7 @@ import matplotlib.pyplot as plt
 import fu_curves
 from observables import t90_from_goals
 from obstacle_layouts import validate_layout
+from filler_layout import goal_semicircle_layout, FILLER_RADIUS
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "input" / "config.json"
@@ -43,23 +62,10 @@ OUTPUT = ROOT / "output"
 
 N = 100
 MAX_TIME = 100.0
-BIG_RADIUS = 0.335  # mejor radio encontrado en radius_comparison.py
-SMALL_RADII = [0.02, 0.04, 0.06, 0.08, 0.10, 0.12, 0.13]
-MARGIN = 1.001  # separa apenas mas que la tangencia exacta, evita solapar por redondeo
+FREE_RADII = [0.24, 0.26, 0.28, 0.30, 0.32]
 REALIZATIONS = 5  # minimo del enunciado para el punto 1.2
-BASE_SEED = 20261500
+BASE_SEED = 20261700
 RETRIES = 5
-
-
-def layout(small_radius, length, width):
-    y = width / 2
-    x_big = length / 2
-    gap = (BIG_RADIUS + small_radius) * MARGIN
-    return [
-        {"x": x_big, "y": y, "radius": BIG_RADIUS},
-        {"x": x_big - gap, "y": y, "radius": small_radius},
-        {"x": x_big + gap, "y": y, "radius": small_radius},
-    ]
 
 
 def build_config(base, obstacles, seed):
@@ -79,7 +85,7 @@ def run_once(base, obstacles, seed):
     CONFIG_PATH.write_text(json.dumps(build_config(base, obstacles, seed)), encoding="utf-8")
     result = subprocess.run(["java", "-jar", str(JAR)], cwd=ROOT, capture_output=True, text=True)
     if result.returncode != 0:
-        raise RuntimeError(f"Corrida fallida (obstacles={obstacles}, seed={seed}): "
+        raise RuntimeError(f"Corrida fallida (K={len(obstacles)} obstaculos, seed={seed}): "
                             f"{result.stderr.strip() or result.stdout.strip()}")
     directory = None
     for line in result.stdout.splitlines():
@@ -124,10 +130,7 @@ def realize():
     width = base["simulation"]["width"]
     particle_radius = base["particles"]["radius"]
 
-    max_small = (length / 2 - BIG_RADIUS) / 2
-    print(f"Radio maximo geometrico para los circulos chicos: {max_small:.4f} m")
-
-    results = {"empty": []}
+    results = {"empty": [], "free_radius": {}}
     for i in range(REALIZATIONS):
         seed = BASE_SEED + i
         print(f"mesa vacia realizacion {i + 1}/{REALIZATIONS} seed={seed}")
@@ -137,28 +140,28 @@ def realize():
         if i == 0:
             fu_curves.save_curve("mesa_vacia", directory, metadata)
 
-    for r in SMALL_RADII:
-        obstacles = layout(r, length, width)
+    for r in FREE_RADII:
+        obstacles = goal_semicircle_layout(r, length, width)
         validate_layout(obstacles, length, width, particle_radius)
-        print(f"r_small={r}: obstaculos={obstacles}")
+        print(f"free_radius={r}: K={len(obstacles)} obstaculos de relleno (radio {FILLER_RADIUS} c/u)")
         runs = []
         for i in range(REALIZATIONS):
             seed = BASE_SEED + int(round(r * 10000)) + i
-            print(f"r_small={r} realizacion {i + 1}/{REALIZATIONS} seed={seed}")
+            print(f"free_radius={r} realizacion {i + 1}/{REALIZATIONS} seed={seed}")
             metadata, directory = run_with_retries(base, obstacles, seed)
             runs.append(metadata)
             print(f"  t90={metadata['t90']}")
             if i == 0:
-                fu_curves.save_curve(f"embudo_r={r}", directory, metadata)
-        results[r] = runs
+                fu_curves.save_curve(f"competencia_R={r}", directory, metadata)
+        results["free_radius"][r] = runs
     return results
 
 
 def plot(results):
     empty_mean, empty_std, empty_n = t90_stats(results["empty"], "mesa vacia")
     rs, means, stds, counts = [], [], [], []
-    for r in SMALL_RADII:
-        m, s, n = t90_stats(results[r], f"r_small={r}")
+    for r in sorted(results["free_radius"]):
+        m, s, n = t90_stats(results["free_radius"][r], f"free_radius={r}")
         if m is None:
             continue
         rs.append(r)
@@ -167,29 +170,29 @@ def plot(results):
         counts.append(n)
 
     fig, ax = plt.subplots(figsize=(7.5, 4.5))
-    ax.errorbar(rs, means, yerr=stds, fmt="o-", capsize=4, color="tab:green",
-                label=f"Circulo grande (R={BIG_RADIUS}) + 2 circulos iguales")
+    ax.errorbar(rs, means, yerr=stds, fmt="o-", capsize=4, color="tab:brown",
+                label="Competencia: relleno + 2 semicirculos libres frente a los arcos")
     if empty_mean is not None:
         ax.axhline(empty_mean, color="tab:blue", linestyle="--", label=f"Mesa vacia (<t90>={empty_mean:.2f} s)")
         ax.axhspan(empty_mean - empty_std, empty_mean + empty_std, color="tab:blue", alpha=0.15)
-    ax.set(xlabel="Radio de los circulos chicos [m]", ylabel="<t90> [s]",
-           title=f"Punto 1.2 - Embudo: circulo grande + 2 chicos (N={N})")
+    ax.set(xlabel="Radio de los semicirculos libres frente a los arcos [m]", ylabel="<t90> [s]",
+           title=f"Punto 1.2 - Competencia: <t90> vs radio libre frente a los arcos (N={N})")
     ax.grid(alpha=0.25)
     ax.legend()
     folder = OUTPUT / "experiment_1_2_plots"
     folder.mkdir(parents=True, exist_ok=True)
     fig.tight_layout()
-    path = folder / f"flanking_circles_comparison_{datetime.now(timezone.utc):%Y%m%d_%H%M%S}.png"
+    path = folder / f"goal_semicircle_comparison_{datetime.now(timezone.utc):%Y%m%d_%H%M%S}.png"
     fig.savefig(path, dpi=160)
     plt.close(fig)
     print(path)
     for r, m, s, n in zip(rs, means, stds, counts):
-        print(f"r_small={r}: <t90>={m:.3f} s, std={s:.3f} s, n={n}")
+        print(f"free_radius={r}: <t90>={m:.3f} s, std={s:.3f} s, n={n}")
     if empty_mean is not None:
         print(f"mesa vacia: <t90>={empty_mean:.3f} s, std={empty_std:.3f} s, n={empty_n}")
     if rs:
         best = min(range(len(rs)), key=lambda i: means[i])
-        print(f"Mejor radio chico explorado: r_small={rs[best]} con <t90>={means[best]:.3f} s")
+        print(f"Mejor radio libre explorado: free_radius={rs[best]} con <t90>={means[best]:.3f} s")
     return path
 
 

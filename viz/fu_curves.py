@@ -31,8 +31,8 @@ CONFIG_COLORS = {
     "x=0.6": "tab:orange",
     "embudo_r=0.02": "tab:green",
     "R=0.339": "tab:red",
-    "paragolpes_r=0.02": "tab:brown",
-    "pasillo_r=0.03": "tab:pink",
+    "embudo_gap=0.45": "tab:purple",
+    "competencia_R=0.3": "tab:brown",
 }
 
 

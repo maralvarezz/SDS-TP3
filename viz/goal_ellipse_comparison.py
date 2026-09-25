@@ -1,21 +1,28 @@
-"""Punto 1.2: arreglo tipo "embudo hacia los arcos" (una de las metodologias
-sugeridas en el enunciado): un circulo grande centrado en la mesa (x=L/2,
-y=W/2), con el mejor radio ya encontrado en radius_comparison.py (R=0.335),
-mas dos circulos iguales a los costados, tangentes al circulo grande y
-centrados tambien en y=W/2, cerca de cada arco.
+"""Punto 1.2: familia "competencia", segunda ronda. Sigue a
+goal_semicircle_comparison.py (barrido de radio, minimo en free_radius=0.30,
+<t90>=13.16 s, meseta ancha entre 0.28 y 0.32) y a
+goal_semicircle_variants_comparison.py (embudo y guias, ambos peores que el
+semicirculo simple -- angostar la boca hacia el arco crea un cuello de
+botella, y agregar obstaculos guia adentro de la cavidad solo suma choques
+sin sesgar la trayectoria hacia el gol).
 
-Se barre el radio r de los dos circulos chicos (iguales entre si) para ver
-si mejora <t90> respecto de usar solo el circulo grande. Restricciones:
+Dos experimentos en esta ronda:
 
-i.  K=3 obstaculos integramente dentro del dominio y sin solaparse entre si.
-    Con el circulo grande tangente a las paredes horizontales y centrado en
-    x=L/2, los circulos chicos tangentes a el quedan en
-    x = L/2 -+ (R_big + r); la restriccion de contencion (Rk<=xk<=L-Rk) fija
-    el maximo geometrico: r <= (L/2 - R_big) / 2.
-ii. Rk >= r_particula y que permita generar las N particulas (se verifica
-    empiricamente antes de correr el experimento completo).
+1. Barrido mas fino del semicirculo alrededor del optimo previo
+   (R=0.29, 0.30, 0.31), para separar mejor las barras de error que se
+   superponian entre 0.28/0.30/0.32.
+2. Variante "elipse": el semicirculo esta acotado por el ancho de la mesa
+   (no puede crecer mas de free_radius~0.32 sin tocar las paredes
+   horizontales), pero la mesa es bastante mas larga que ancha
+   (L=1.20 vs W=0.68). En vez de angostar la boca hacia el arco (eso ya
+   fallo, ver embudo), se estira la cavidad en profundidad manteniendo el
+   mismo ancho en la boca (semieje menor b=0.32, igual que el semicirculo,
+   sin cuello de botella) y un semieje mayor a > b en la direccion
+   longitudinal, dando mas area sin repetir el error del embudo. Se prueban
+   a=0.40, 0.45 y 0.50 (ver filler_layout.goal_ellipse_layout).
 
-N=100, maxTime=100s (mismos parametros que el resto de los scripts de 1.2).
+N=100, maxTime=100s, 5 realizaciones por configuracion (el minimo del
+enunciado, para no alargar demasiado el tiempo de corrida).
 
 Java no conoce este experimento ni recibe argumentos por linea de comando:
 cada corrida se dispara reescribiendo la unica fuente de verdad,
@@ -35,6 +42,7 @@ import matplotlib.pyplot as plt
 import fu_curves
 from observables import t90_from_goals
 from obstacle_layouts import validate_layout
+from filler_layout import goal_semicircle_layout, goal_ellipse_layout, ELLIPSE_B
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "input" / "config.json"
@@ -43,23 +51,11 @@ OUTPUT = ROOT / "output"
 
 N = 100
 MAX_TIME = 100.0
-BIG_RADIUS = 0.335  # mejor radio encontrado en radius_comparison.py
-SMALL_RADII = [0.02, 0.04, 0.06, 0.08, 0.10, 0.12, 0.13]
-MARGIN = 1.001  # separa apenas mas que la tangencia exacta, evita solapar por redondeo
+REFINED_RADII = [0.29, 0.30, 0.31]  # completa la grilla ya corrida (0.24, 0.26, 0.28, 0.30, 0.32)
+ELLIPSE_A_VALUES = [0.40, 0.45, 0.50]  # semieje mayor; b=ELLIPSE_B=0.32 fijo
 REALIZATIONS = 5  # minimo del enunciado para el punto 1.2
-BASE_SEED = 20261500
+BASE_SEED = 20267100
 RETRIES = 5
-
-
-def layout(small_radius, length, width):
-    y = width / 2
-    x_big = length / 2
-    gap = (BIG_RADIUS + small_radius) * MARGIN
-    return [
-        {"x": x_big, "y": y, "radius": BIG_RADIUS},
-        {"x": x_big - gap, "y": y, "radius": small_radius},
-        {"x": x_big + gap, "y": y, "radius": small_radius},
-    ]
 
 
 def build_config(base, obstacles, seed):
@@ -79,7 +75,7 @@ def run_once(base, obstacles, seed):
     CONFIG_PATH.write_text(json.dumps(build_config(base, obstacles, seed)), encoding="utf-8")
     result = subprocess.run(["java", "-jar", str(JAR)], cwd=ROOT, capture_output=True, text=True)
     if result.returncode != 0:
-        raise RuntimeError(f"Corrida fallida (obstacles={obstacles}, seed={seed}): "
+        raise RuntimeError(f"Corrida fallida (K={len(obstacles)} obstaculos, seed={seed}): "
                             f"{result.stderr.strip() or result.stdout.strip()}")
     directory = None
     for line in result.stdout.splitlines():
@@ -118,16 +114,24 @@ def t90_stats(metadatas, label):
     return mean(values), (pstdev(values) if len(values) > 1 else 0.0), len(values)
 
 
+def configs():
+    """Lista ordenada de (label, kind, param) a correr, en un solo eje x
+    categorico para el grafico final."""
+    items = []
+    for r in REFINED_RADII:
+        items.append((f"R={r}", "semicircle", r))
+    for a in ELLIPSE_A_VALUES:
+        items.append((f"elipse a={a}", "ellipse", a))
+    return items
+
+
 def realize():
     base = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
     length = base["simulation"]["length"]
     width = base["simulation"]["width"]
     particle_radius = base["particles"]["radius"]
 
-    max_small = (length / 2 - BIG_RADIUS) / 2
-    print(f"Radio maximo geometrico para los circulos chicos: {max_small:.4f} m")
-
-    results = {"empty": []}
+    results = {"empty": [], "configs": {}}
     for i in range(REALIZATIONS):
         seed = BASE_SEED + i
         print(f"mesa vacia realizacion {i + 1}/{REALIZATIONS} seed={seed}")
@@ -137,59 +141,62 @@ def realize():
         if i == 0:
             fu_curves.save_curve("mesa_vacia", directory, metadata)
 
-    for r in SMALL_RADII:
-        obstacles = layout(r, length, width)
+    for c_index, (label, kind, param) in enumerate(configs()):
+        if kind == "semicircle":
+            obstacles = goal_semicircle_layout(param, length, width)
+        else:
+            obstacles = goal_ellipse_layout(param, length, width, b=ELLIPSE_B)
         validate_layout(obstacles, length, width, particle_radius)
-        print(f"r_small={r}: obstaculos={obstacles}")
+        print(f"{label}: K={len(obstacles)} obstaculos")
         runs = []
         for i in range(REALIZATIONS):
-            seed = BASE_SEED + int(round(r * 10000)) + i
-            print(f"r_small={r} realizacion {i + 1}/{REALIZATIONS} seed={seed}")
+            seed = BASE_SEED + 100_000 * (c_index + 1) + i
+            print(f"{label} realizacion {i + 1}/{REALIZATIONS} seed={seed}")
             metadata, directory = run_with_retries(base, obstacles, seed)
             runs.append(metadata)
             print(f"  t90={metadata['t90']}")
             if i == 0:
-                fu_curves.save_curve(f"embudo_r={r}", directory, metadata)
-        results[r] = runs
+                curve_label = f"competencia_{'semicircle' if kind == 'semicircle' else 'ellipse'}_{param}"
+                fu_curves.save_curve(curve_label, directory, metadata)
+        results["configs"][label] = runs
     return results
 
 
 def plot(results):
     empty_mean, empty_std, empty_n = t90_stats(results["empty"], "mesa vacia")
-    rs, means, stds, counts = [], [], [], []
-    for r in SMALL_RADII:
-        m, s, n = t90_stats(results[r], f"r_small={r}")
-        if m is None:
-            continue
-        rs.append(r)
-        means.append(m)
-        stds.append(s)
+    labels = [label for label, _, _ in configs()]
+    means, stds, counts = [], [], []
+    for label in labels:
+        m, s, n = t90_stats(results["configs"][label], label)
+        means.append(m if m is not None else float("nan"))
+        stds.append(s if s is not None else 0.0)
         counts.append(n)
 
-    fig, ax = plt.subplots(figsize=(7.5, 4.5))
-    ax.errorbar(rs, means, yerr=stds, fmt="o-", capsize=4, color="tab:green",
-                label=f"Circulo grande (R={BIG_RADIUS}) + 2 circulos iguales")
+    colors = ["tab:brown"] * len(REFINED_RADII) + ["tab:purple"] * len(ELLIPSE_A_VALUES)
+    fig, ax = plt.subplots(figsize=(9, 4.8))
+    xs = range(len(labels))
+    ax.bar(xs, means, yerr=stds, capsize=5, color=colors, alpha=0.75)
+    ax.set_xticks(list(xs))
+    ax.set_xticklabels(labels, fontsize=9)
     if empty_mean is not None:
         ax.axhline(empty_mean, color="tab:blue", linestyle="--", label=f"Mesa vacia (<t90>={empty_mean:.2f} s)")
         ax.axhspan(empty_mean - empty_std, empty_mean + empty_std, color="tab:blue", alpha=0.15)
-    ax.set(xlabel="Radio de los circulos chicos [m]", ylabel="<t90> [s]",
-           title=f"Punto 1.2 - Embudo: circulo grande + 2 chicos (N={N})")
-    ax.grid(alpha=0.25)
+    ax.set(ylabel="<t90> [s]", title=f"Punto 1.2 - Competencia: semicirculo fino + elipse (N={N})")
+    ax.grid(alpha=0.25, axis="y")
     ax.legend()
     folder = OUTPUT / "experiment_1_2_plots"
     folder.mkdir(parents=True, exist_ok=True)
     fig.tight_layout()
-    path = folder / f"flanking_circles_comparison_{datetime.now(timezone.utc):%Y%m%d_%H%M%S}.png"
+    path = folder / f"goal_ellipse_comparison_{datetime.now(timezone.utc):%Y%m%d_%H%M%S}.png"
     fig.savefig(path, dpi=160)
     plt.close(fig)
     print(path)
-    for r, m, s, n in zip(rs, means, stds, counts):
-        print(f"r_small={r}: <t90>={m:.3f} s, std={s:.3f} s, n={n}")
+    for label, m, s, n in zip(labels, means, stds, counts):
+        print(f"{label}: <t90>={m:.3f} s, std={s:.3f} s, n={n}")
     if empty_mean is not None:
         print(f"mesa vacia: <t90>={empty_mean:.3f} s, std={empty_std:.3f} s, n={empty_n}")
-    if rs:
-        best = min(range(len(rs)), key=lambda i: means[i])
-        print(f"Mejor radio chico explorado: r_small={rs[best]} con <t90>={means[best]:.3f} s")
+    best = min(range(len(labels)), key=lambda i: means[i])
+    print(f"Mejor de esta ronda: {labels[best]} con <t90>={means[best]:.3f} s")
     return path
 
 

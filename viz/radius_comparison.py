@@ -44,7 +44,7 @@ N = 100
 MAX_TIME = 100.0
 BEST_X = 0.60  # encontrado en configuration_comparison.py (x-sweep con R=0.15)
 R_VALUES = [0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.325, 0.335]
-REALIZATIONS = 10
+REALIZATIONS = 5  # minimo del enunciado para el punto 1.2
 BASE_SEED = 20261200
 RETRIES = 5
 

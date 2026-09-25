@@ -1,19 +1,22 @@
-"""Punto 1.2: arreglo tipo "embudo hacia los arcos" (una de las metodologias
-sugeridas en el enunciado): un circulo grande centrado en la mesa (x=L/2,
-y=W/2), con el mejor radio ya encontrado en radius_comparison.py (R=0.335),
-mas dos circulos iguales a los costados, tangentes al circulo grande y
-centrados tambien en y=W/2, cerca de cada arco.
+"""Punto 1.2: familia "objeto centrado + 2 pelotas iguales a los costados"
+(embudo), variando ahora la posicion de los dos circulos chicos en vez de su
+radio. Se fija el radio chico en el mejor valor ya encontrado en
+flanking_circles_comparison.py (r=0.02, el que dio menor <t90>) y se separa
+simetricamente ambos circulos chicos del circulo grande a lo largo del eje x,
+manteniendolos siempre centrados en y=W/2.
 
-Se barre el radio r de los dos circulos chicos (iguales entre si) para ver
-si mejora <t90> respecto de usar solo el circulo grande. Restricciones:
+Se parametriza la posicion por la distancia (gap) entre el centro del
+circulo grande (x=L/2) y el centro de cada circulo chico: los chicos quedan
+en x = L/2 -+ gap. El minimo geometrico es la tangencia con el circulo
+grande (gap = R_big + r_small); se barre gap desde ahi hasta cerca de la
+pared, dejando un margen para no solapar ni tocar el borde exactamente.
 
+Restricciones (mismas que el resto de 1.2):
 i.  K=3 obstaculos integramente dentro del dominio y sin solaparse entre si.
-    Con el circulo grande tangente a las paredes horizontales y centrado en
-    x=L/2, los circulos chicos tangentes a el quedan en
-    x = L/2 -+ (R_big + r); la restriccion de contencion (Rk<=xk<=L-Rk) fija
-    el maximo geometrico: r <= (L/2 - R_big) / 2.
-ii. Rk >= r_particula y que permita generar las N particulas (se verifica
-    empiricamente antes de correr el experimento completo).
+    Contencion: r_small <= x_small <= L - r_small, es decir
+    gap <= L/2 - r_small.
+ii. Rk >= r_particula y que permita generar las N particulas (ya validado
+    para R_big y r_small en radius_comparison.py / flanking_circles_comparison.py).
 
 N=100, maxTime=100s (mismos parametros que el resto de los scripts de 1.2).
 
@@ -43,22 +46,22 @@ OUTPUT = ROOT / "output"
 
 N = 100
 MAX_TIME = 100.0
-BIG_RADIUS = 0.335  # mejor radio encontrado en radius_comparison.py
-SMALL_RADII = [0.02, 0.04, 0.06, 0.08, 0.10, 0.12, 0.13]
-MARGIN = 1.001  # separa apenas mas que la tangencia exacta, evita solapar por redondeo
+BIG_RADIUS = 0.335  # mismo radio grande que flanking_circles_comparison.py
+SMALL_RADIUS = 0.02  # mejor radio chico encontrado en flanking_circles_comparison.py
+GAPS = [0.36, 0.39, 0.42, 0.45, 0.48, 0.51]  # distancia centro-a-centro (circulo grande -> chico)
+WALL_MARGIN = 0.05  # se evita tocar exactamente la pared para no generar casos limite
 REALIZATIONS = 5  # minimo del enunciado para el punto 1.2
-BASE_SEED = 20261500
+BASE_SEED = 20261600
 RETRIES = 5
 
 
-def layout(small_radius, length, width):
+def layout(gap, length, width):
     y = width / 2
     x_big = length / 2
-    gap = (BIG_RADIUS + small_radius) * MARGIN
     return [
         {"x": x_big, "y": y, "radius": BIG_RADIUS},
-        {"x": x_big - gap, "y": y, "radius": small_radius},
-        {"x": x_big + gap, "y": y, "radius": small_radius},
+        {"x": x_big - gap, "y": y, "radius": SMALL_RADIUS},
+        {"x": x_big + gap, "y": y, "radius": SMALL_RADIUS},
     ]
 
 
@@ -124,10 +127,16 @@ def realize():
     width = base["simulation"]["width"]
     particle_radius = base["particles"]["radius"]
 
-    max_small = (length / 2 - BIG_RADIUS) / 2
-    print(f"Radio maximo geometrico para los circulos chicos: {max_small:.4f} m")
+    tangent_gap = BIG_RADIUS + SMALL_RADIUS
+    max_gap = length / 2 - SMALL_RADIUS - WALL_MARGIN
+    print(f"Gap minimo (tangencia): {tangent_gap:.4f} m; gap maximo geometrico: {max_gap:.4f} m")
+    for gap in GAPS:
+        if gap < tangent_gap:
+            raise ValueError(f"gap={gap} < tangencia={tangent_gap:.4f} (solaparia con el circulo grande)")
+        if gap > max_gap:
+            raise ValueError(f"gap={gap} > maximo geometrico={max_gap:.4f} (saldria del dominio)")
 
-    results = {"empty": []}
+    results = {"empty": [], "gaps": {}}
     for i in range(REALIZATIONS):
         seed = BASE_SEED + i
         print(f"mesa vacia realizacion {i + 1}/{REALIZATIONS} seed={seed}")
@@ -137,59 +146,59 @@ def realize():
         if i == 0:
             fu_curves.save_curve("mesa_vacia", directory, metadata)
 
-    for r in SMALL_RADII:
-        obstacles = layout(r, length, width)
+    for gap in GAPS:
+        obstacles = layout(gap, length, width)
         validate_layout(obstacles, length, width, particle_radius)
-        print(f"r_small={r}: obstaculos={obstacles}")
+        print(f"gap={gap}: obstaculos={obstacles}")
         runs = []
         for i in range(REALIZATIONS):
-            seed = BASE_SEED + int(round(r * 10000)) + i
-            print(f"r_small={r} realizacion {i + 1}/{REALIZATIONS} seed={seed}")
+            seed = BASE_SEED + int(round(gap * 10000)) + i
+            print(f"gap={gap} realizacion {i + 1}/{REALIZATIONS} seed={seed}")
             metadata, directory = run_with_retries(base, obstacles, seed)
             runs.append(metadata)
             print(f"  t90={metadata['t90']}")
             if i == 0:
-                fu_curves.save_curve(f"embudo_r={r}", directory, metadata)
-        results[r] = runs
+                fu_curves.save_curve(f"embudo_gap={gap}", directory, metadata)
+        results["gaps"][gap] = runs
     return results
 
 
 def plot(results):
     empty_mean, empty_std, empty_n = t90_stats(results["empty"], "mesa vacia")
-    rs, means, stds, counts = [], [], [], []
-    for r in SMALL_RADII:
-        m, s, n = t90_stats(results[r], f"r_small={r}")
+    gaps, means, stds, counts = [], [], [], []
+    for gap in sorted(results["gaps"]):
+        m, s, n = t90_stats(results["gaps"][gap], f"gap={gap}")
         if m is None:
             continue
-        rs.append(r)
+        gaps.append(gap)
         means.append(m)
         stds.append(s)
         counts.append(n)
 
     fig, ax = plt.subplots(figsize=(7.5, 4.5))
-    ax.errorbar(rs, means, yerr=stds, fmt="o-", capsize=4, color="tab:green",
-                label=f"Circulo grande (R={BIG_RADIUS}) + 2 circulos iguales")
+    ax.errorbar(gaps, means, yerr=stds, fmt="o-", capsize=4, color="tab:purple",
+                label=f"Circulo grande (R={BIG_RADIUS}) + 2 chicos (r={SMALL_RADIUS}), separacion variable")
     if empty_mean is not None:
         ax.axhline(empty_mean, color="tab:blue", linestyle="--", label=f"Mesa vacia (<t90>={empty_mean:.2f} s)")
         ax.axhspan(empty_mean - empty_std, empty_mean + empty_std, color="tab:blue", alpha=0.15)
-    ax.set(xlabel="Radio de los circulos chicos [m]", ylabel="<t90> [s]",
-           title=f"Punto 1.2 - Embudo: circulo grande + 2 chicos (N={N})")
+    ax.set(xlabel="Distancia centro-a-centro circulo grande -> circulos chicos [m]", ylabel="<t90> [s]",
+           title=f"Punto 1.2 - Embudo: <t90> vs posicion de los circulos chicos (N={N})")
     ax.grid(alpha=0.25)
     ax.legend()
     folder = OUTPUT / "experiment_1_2_plots"
     folder.mkdir(parents=True, exist_ok=True)
     fig.tight_layout()
-    path = folder / f"flanking_circles_comparison_{datetime.now(timezone.utc):%Y%m%d_%H%M%S}.png"
+    path = folder / f"flanking_position_comparison_{datetime.now(timezone.utc):%Y%m%d_%H%M%S}.png"
     fig.savefig(path, dpi=160)
     plt.close(fig)
     print(path)
-    for r, m, s, n in zip(rs, means, stds, counts):
-        print(f"r_small={r}: <t90>={m:.3f} s, std={s:.3f} s, n={n}")
+    for gap, m, s, n in zip(gaps, means, stds, counts):
+        print(f"gap={gap}: <t90>={m:.3f} s, std={s:.3f} s, n={n}")
     if empty_mean is not None:
         print(f"mesa vacia: <t90>={empty_mean:.3f} s, std={empty_std:.3f} s, n={empty_n}")
-    if rs:
-        best = min(range(len(rs)), key=lambda i: means[i])
-        print(f"Mejor radio chico explorado: r_small={rs[best]} con <t90>={means[best]:.3f} s")
+    if gaps:
+        best = min(range(len(gaps)), key=lambda i: means[i])
+        print(f"Mejor separacion explorada: gap={gaps[best]} con <t90>={means[best]:.3f} s")
     return path
 
 
