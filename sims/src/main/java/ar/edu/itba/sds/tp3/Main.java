@@ -15,10 +15,10 @@ public final class Main {
 
     public static void main(String[] args) {
         try {
-            if (args.length != 0) {
-                throw new IllegalArgumentException("Los parametros se definen en input/config.json; ejecutar sin argumentos");
+            if (args.length > 1) {
+                throw new IllegalArgumentException("Uso: java -jar sims/target/sds_tp3_g8.jar [configPath]");
             }
-            Path configPath = Path.of("input/config.json");
+            Path configPath = args.length == 0 ? Path.of("input/config.json") : Path.of(args[0]);
             Path outputPath = Path.of("output");
             var config = new ConfigLoader().load(configPath);
             if (config.simulation().seed() == null) {
