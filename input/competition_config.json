@@ -1,0 +1,23 @@
+{
+  "simulation": {
+    "length": 1.2,
+    "width": 0.68,
+    "goalSize": 0.2,
+    "maxTime": 100.0,
+    "seed": 145449787
+  },
+  "particles": {
+    "count": 100,
+    "radius": 0.0175,
+    "mass": 0.025,
+    "initialSpeed": 1.0
+  },
+  "output": {
+    "everyEvents": 1000000,
+    "writeStates": false,
+    "writeGoals": true,
+    "writeCollisions": false
+  },
+  "obstaclesFile": "obstacles.txt",
+  "obstacles": []
+}
