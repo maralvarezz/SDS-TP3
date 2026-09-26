@@ -104,20 +104,31 @@ def t90_from_goals(directory):
     return None
 
 
-def print_run_summary(directory):
+def read_run_result(directory):
     metadata = json.loads(one_file(directory, "metadata_*.json").read_text(encoding="utf-8"))
     if metadata.get("status") != "COMPLETED":
         raise RuntimeError(f"La corrida no quedo completada: {directory}")
 
     t90 = t90_from_goals(directory)
+    return {
+        "seed": metadata["seed"],
+        "t90": t90,
+    }
 
+
+def print_run_result(result):
     print("----- competencia -----")
-    print(f"seed: {metadata['seed']}")
-    print(f"t90: {t90:.2f}" if t90 is not None else "t90: no alcanzado")
+    print(f"seed: {result['seed']}")
+    print(f"t90: {result['t90']:.2f}" if result["t90"] is not None else "t90: no alcanzado")
     print("-----------------------")
 
 
 def run_competition(seed):
+    """Ejecuta una corrida y devuelve los datos que imprime la CLI.
+
+    Retorna:
+        dict con "seed" (seed efectiva Java long) y "t90" (float o None).
+    """
     validate_inputs()
     java_seed = to_java_long(seed)
     competition_config = build_competition_config(java_seed)
@@ -138,13 +149,13 @@ def run_competition(seed):
     if result.returncode != 0:
         details = result.stderr.strip() or result.stdout.strip()
         raise RuntimeError(f"La corrida fallo con codigo de salida {result.returncode}: {details}")
-    print_run_summary(run_directory_from_stdout(result.stdout))
+    return read_run_result(run_directory_from_stdout(result.stdout))
 
 
 def main():
     args = parse_args()
     try:
-        run_competition(args.seed)
+        print_run_result(run_competition(args.seed))
     except (OSError, RuntimeError) as error:
         print(f"Error: {error}", file=sys.stderr)
         return 1
