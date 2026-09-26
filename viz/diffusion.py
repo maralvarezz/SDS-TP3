@@ -20,6 +20,16 @@ el enunciado. t90 tambien pasa a ser el valor de esa misma corrida (sin
 promedio ni barra de error entre realizaciones, que solo tiene sentido en
 1.2/1.4 donde el enunciado si pide "al menos 5 realizaciones").
 
+Excepcion puntual al parrafo anterior: el grafico de CORRELACION D vs t90
+(plot_correlation) es otro grafico distinto de la curva DCM(t), y la
+correccion de catedra hablaba especificamente de esa curva. Para poder
+mostrar barra de error en ambos ejes de la correlacion, run_config corre
+REALIZATIONS=5 realizaciones por configuracion y promedia D y t90 entre
+ellas -- pero la realizacion 0 de ese barrido (misma seed que antes,
+BASE_SEED + config_index) sigue siendo la unica que alimenta plot_msd_all,
+asi que la curva DCM(t)/ajuste en si no cambia: sigue siendo una unica
+realizacion sin promediar.
+
 Configuraciones estudiadas: mesa vacia + UN representante final por cada una
 de las 3 familias del punto 1.2 (no uno por cada eje explorado dentro de una
 familia): R=0.339 (familia A: obstaculo unico, posicion x=L/2 y radio ya
@@ -98,6 +108,16 @@ N = 100
 MAX_TIME = 100.0
 EVERY_EVENTS = 25
 BASE_SEED = 20270000
+
+# Solo para las barras de error de D y t90 en el grafico de CORRELACION
+# (plot_correlation). La curva DCM(t) y el ajuste lineal (plot_msd_all) siguen
+# usando una unica realizacion por configuracion -- la realizacion 0 de este
+# barrido, con la misma seed que antes (BASE_SEED + config_index) -- tal como
+# pide el enunciado/la correccion de catedra para el punto 1.3. La correccion
+# hablaba puntualmente de esa curva y de no promediar el DCM entre
+# realizaciones; el grafico de correlacion D vs t90 es otro grafico distinto,
+# y para tener barra de error en ambos ejes hacen falta varias corridas.
+REALIZATIONS = 5
 
 FIT_LOW_FRACTION = 0.0
 FIT_HIGH_FRACTION = 0.50
@@ -201,20 +221,35 @@ def diffusion_coefficient(times, msd):
 
 
 def run_config(base, label, obstacles, config_index):
-    """Una unica realizacion por configuracion (seed determinista por
-    indice), tal como pide el enunciado para el punto 1.3 y como lo corrigio
-    la catedra."""
-    seed = BASE_SEED + config_index
-    directory, metadata = run_once(base, obstacles, seed)
-    times, msd = msd_curve(directory)
-    if times[-1] < MAX_TIME:
-        raise ValueError(f"{label} seed={seed}: la corrida no llego a maxTime")
-    if metadata["t90"] is None:
-        raise ValueError(f"{label} seed={seed}: no alcanzo t90 antes de maxTime")
-    print(f"  seed={seed} t90={metadata['t90']:.3f} frames={len(times)}")
-    d, slope, intercept, window = diffusion_coefficient(times, msd)
-    return {"times": times, "msd": msd, "d": d, "slope": slope,
-            "intercept": intercept, "window": window, "t90": metadata["t90"]}
+    """Corre REALIZATIONS realizaciones por configuracion. La realizacion 0
+    (misma seed que antes: BASE_SEED + config_index) es la unica que se usa
+    para la curva DCM(t) y el ajuste lineal -- eso sigue siendo una unica
+    realizacion sin promediar, como pide el enunciado para el punto 1.3. Las
+    realizaciones restantes solo sirven para tener desvio estandar de D y
+    t90 en el grafico de correlacion (plot_correlation)."""
+    ds, t90s = [], []
+    curve = None
+    for i in range(REALIZATIONS):
+        seed = BASE_SEED + config_index if i == 0 else BASE_SEED + config_index * 1000 + i
+        directory, metadata = run_once(base, obstacles, seed)
+        times, msd = msd_curve(directory)
+        if times[-1] < MAX_TIME:
+            raise ValueError(f"{label} seed={seed}: la corrida no llego a maxTime")
+        if metadata["t90"] is None:
+            raise ValueError(f"{label} seed={seed}: no alcanzo t90 antes de maxTime")
+        d, slope, intercept, window = diffusion_coefficient(times, msd)
+        print(f"  seed={seed} t90={metadata['t90']:.3f} D={fmt2sf(d)} m^2/s frames={len(times)}")
+        ds.append(d)
+        t90s.append(metadata["t90"])
+        if i == 0:
+            curve = {"times": times, "msd": msd, "d": d, "slope": slope,
+                     "intercept": intercept, "window": window, "t90": metadata["t90"]}
+    curve["d_mean"] = float(np.mean(ds))
+    curve["d_std"] = float(np.std(ds)) if len(ds) > 1 else 0.0
+    curve["t90_mean"] = float(np.mean(t90s))
+    curve["t90_std"] = float(np.std(t90s)) if len(t90s) > 1 else 0.0
+    curve["n"] = len(ds)
+    return curve
 
 
 def slug(label):
@@ -232,7 +267,7 @@ def plot_msd_all(results):
         color = fu_curves.CONFIG_COLORS[label]
         display_name = fu_curves.DISPLAY_NAMES.get(label, label)
         ax.plot(r["times"], r["msd"], color=color, linewidth=1.8,
-                 label=f"{display_name} (D={fmt2sf(r['d'])} m^2/s)")
+                 label=display_name)
         # La recta se dibuja desde el origen (no desde "lo"): el ajuste ya
         # fuerza el modelo <z^2>=4Dt por el origen (Teorica_0), asi que
         # arrancar el trazo en "lo" lo dejaba flotando en el medio de la
@@ -260,8 +295,7 @@ def plot_msd_all(results):
     ax.set_ylim(0, ymax * 1.08)  # el 0 explicito ancla el origen (0,0) --
     # por donde pasan todas las rectas de ajuste -- a la esquina inferior
     # izquierda, en vez del margen automatico de matplotlib
-    ax.set(xlabel="Tiempo simulado [s]", ylabel="DCM [m^2]",
-           title="Punto 1.3 - DCM(t) por configuracion (una realizacion)")
+    ax.set(xlabel="Tiempo simulado [s]", ylabel="DCM [m^2]")
     ax.yaxis.set_major_locator(MaxNLocator(nbins=12))  # mas marcas en el eje y
     ax.grid(alpha=0.25)
     ax.legend(fontsize=8)
@@ -280,10 +314,10 @@ def plot_correlation(results):
     for label in CONFIGS:
         r = results[label]
         color = fu_curves.CONFIG_COLORS[label]
-        ax.plot(r["t90"], r["d"], "o", color=color, markersize=8,
-                label=fu_curves.DISPLAY_NAMES.get(label, label))
-    ax.set(xlabel="t90 [s]", ylabel="D [m^2/s]",
-           title="Punto 1.3 - Correlacion D vs t90 (una realizacion)")
+        ax.errorbar(r["t90_mean"], r["d_mean"], xerr=r["t90_std"], yerr=r["d_std"],
+                    fmt="o", color=color, markersize=8, capsize=4,
+                    label=fu_curves.DISPLAY_NAMES.get(label, label))
+    ax.set(xlabel="t90 [s]", ylabel="D [m^2/s]")
     ax.grid(alpha=0.25)
     ax.legend(fontsize=8)
     folder = OUTPUT / "experiment_1_3_plots"
@@ -313,17 +347,23 @@ def main():
             print(f"{label}: obstaculos={obstacles}")
             results[label] = run_config(base, label, obstacles, c)
             r = results[label]
-            print(f"  D={fmt2sf(r['d'])} m^2/s (ventana {r['window'][0]:.1f}-{r['window'][1]:.1f} s), "
-                  f"t90={r['t90']:.3f} s")
+            print(f"  DCM(t)/ajuste (1 realizacion): D={fmt2sf(r['d'])} m^2/s "
+                  f"(ventana {r['window'][0]:.1f}-{r['window'][1]:.1f} s), t90={r['t90']:.3f} s")
+            print(f"  correlacion ({r['n']} realizaciones): "
+                  f"D={fmt2sf(r['d_mean'])}+/-{fmt2sf(r['d_std'])} m^2/s, "
+                  f"t90={r['t90_mean']:.3f}+/-{r['t90_std']:.3f} s")
         plot_msd_all(results)
         plot_correlation(results)
-        ds = [results[label]["d"] for label in CONFIGS]
-        ts = [results[label]["t90"] for label in CONFIGS]
+        ds = [results[label]["d_mean"] for label in CONFIGS]
+        ts = [results[label]["t90_mean"] for label in CONFIGS]
         print("\nResumen:")
         for label in CONFIGS:
             r = results[label]
-            print(f"  {label}: D={fmt2sf(r['d'])} m^2/s, t90={r['t90']:.3f} s")
-        print(f"Correlacion de Pearson D vs t90 ({len(CONFIGS)} configuraciones): "
+            print(f"  {label}: D={fmt2sf(r['d_mean'])}+/-{fmt2sf(r['d_std'])} m^2/s, "
+                  f"t90={r['t90_mean']:.3f}+/-{r['t90_std']:.3f} s "
+                  f"({r['n']} realizaciones)")
+        print(f"Correlacion de Pearson D vs t90 ({len(CONFIGS)} configuraciones, "
+              f"sobre las medias de {REALIZATIONS} realizaciones c/u): "
               f"r={np.corrcoef(ds, ts)[0, 1]:.3f}")
     finally:
         CONFIG_PATH.write_text(original, encoding="utf-8")

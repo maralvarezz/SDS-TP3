@@ -42,7 +42,7 @@ CONFIG_COLORS = {
 # ningun grafico final, asi que no necesitan nombre de exhibicion.
 DISPLAY_NAMES = {
     "mesa_vacia": "Mesa vacia",
-    "R=0.339": "Circulo grande",
+    "R=0.339": "Obstaculo unico",
     "embudo_gap=0.45": "Embudo",
     "competencia_R=0.3": "Competencia",
 }

@@ -160,12 +160,11 @@ def plot(results):
 
     fig, ax = plt.subplots(figsize=(7.5, 4.5))
     ax.errorbar(xs, means, yerr=stds, fmt="o-", capsize=4, color="tab:orange",
-                label=f"Obstaculo unico (K=1, R={OBSTACLE_RADIUS} m)")
+                label="Obstaculo unico")
     if empty_mean is not None:
-        ax.axhline(empty_mean, color="tab:blue", linestyle="--", label=f"Mesa vacia (<t90>={empty_mean:.2f} s)")
+        ax.axhline(empty_mean, color="tab:blue", linestyle="--", label="Mesa vacia")
         ax.axhspan(empty_mean - empty_std, empty_mean + empty_std, color="tab:blue", alpha=0.15)
-    ax.set(xlabel="Posicion x del obstaculo [m]", ylabel="<t90> [s]",
-           title=f"Punto 1.2 - <t90> vs posicion longitudinal del obstaculo (N={N})")
+    ax.set(xlabel="Posicion x del obstaculo [m]", ylabel="<t90> [s]")
     ax.grid(alpha=0.25)
     ax.legend()
     folder = OUTPUT / "experiment_1_2_plots"
