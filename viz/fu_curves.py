@@ -35,6 +35,18 @@ CONFIG_COLORS = {
     "competencia_R=0.3": "tab:brown",
 }
 
+# Nombre de familia para mostrar en leyendas (las etiquetas internas de mas
+# arriba se usan como claves de color/almacenamiento, no como texto legible).
+# Solo cubre las 4 configuraciones "oficiales" (mesa vacia + 1 final por
+# familia); los resultados intermedios (x=0.6, embudo_r=0.02) no aparecen en
+# ningun grafico final, asi que no necesitan nombre de exhibicion.
+DISPLAY_NAMES = {
+    "mesa_vacia": "Mesa vacia",
+    "R=0.339": "Circulo grande",
+    "embudo_gap=0.45": "Embudo",
+    "competencia_R=0.3": "Competencia",
+}
+
 
 def _fu_curve(run, metadata):
     data = list(rows(one_file(run, "goals_*.csv")))
@@ -81,7 +93,8 @@ def plot_curves(labels=None, name="comparison"):
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     for i, (label, curve) in enumerate(curves.items()):
         color = CONFIG_COLORS.get(label, colors[i % len(colors)])
-        ax.step(curve["times"], curve["fractions"], where="post", label=label, color=color)
+        ax.step(curve["times"], curve["fractions"], where="post",
+                label=DISPLAY_NAMES.get(label, label), color=color)
         if curve.get("t90") is not None:
             ax.axvline(curve["t90"], linestyle=":", color=color, alpha=0.5)
     ax.axhline(0.9, linestyle="--", color="0.5", linewidth=1, label="90 %")

@@ -230,8 +230,9 @@ def plot_msd_all(results):
     for label in CONFIGS:
         r = results[label]
         color = fu_curves.CONFIG_COLORS[label]
+        display_name = fu_curves.DISPLAY_NAMES.get(label, label)
         ax.plot(r["times"], r["msd"], color=color, linewidth=1.8,
-                 label=f"{label} (D={fmt2sf(r['d'])} m^2/s)")
+                 label=f"{display_name} (D={fmt2sf(r['d'])} m^2/s)")
         # La recta se dibuja desde el origen (no desde "lo"): el ajuste ya
         # fuerza el modelo <z^2>=4Dt por el origen (Teorica_0), asi que
         # arrancar el trazo en "lo" lo dejaba flotando en el medio de la
@@ -279,7 +280,8 @@ def plot_correlation(results):
     for label in CONFIGS:
         r = results[label]
         color = fu_curves.CONFIG_COLORS[label]
-        ax.plot(r["t90"], r["d"], "o", color=color, markersize=8, label=label)
+        ax.plot(r["t90"], r["d"], "o", color=color, markersize=8,
+                label=fu_curves.DISPLAY_NAMES.get(label, label))
     ax.set(xlabel="t90 [s]", ylabel="D [m^2/s]",
            title="Punto 1.3 - Correlacion D vs t90 (una realizacion)")
     ax.grid(alpha=0.25)

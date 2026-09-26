@@ -171,14 +171,18 @@ def plot(results):
 
     fig, ax = plt.subplots(figsize=(7.5, 4.5))
     ax.errorbar(rs, means, yerr=stds, fmt="o-", capsize=4, color="tab:brown",
-                label="Competencia: relleno + 2 semicirculos libres frente a los arcos")
+                label="Competencia")
     if empty_mean is not None:
-        ax.axhline(empty_mean, color="tab:blue", linestyle="--", label=f"Mesa vacia (<t90>={empty_mean:.2f} s)")
+        ax.axhline(empty_mean, color="tab:blue", linestyle="--", label="Mesa vacia")
         ax.axhspan(empty_mean - empty_std, empty_mean + empty_std, color="tab:blue", alpha=0.15)
     ax.set(xlabel="Radio de los semicirculos libres frente a los arcos [m]", ylabel="<t90> [s]",
            title=f"Punto 1.2 - Competencia: <t90> vs radio libre frente a los arcos (N={N})")
     ax.grid(alpha=0.25)
-    ax.legend()
+    # Adentro del grafico, abajo a la izquierda: ahi la curva esta en su punto
+    # mas alto (r=0.24) y queda espacio libre por debajo sin tapar ni la
+    # curva/barras de error ni la franja de mesa vacia (que ocupa la parte
+    # superior).
+    ax.legend(loc="lower left")
     folder = OUTPUT / "experiment_1_2_plots"
     folder.mkdir(parents=True, exist_ok=True)
     fig.tight_layout()
