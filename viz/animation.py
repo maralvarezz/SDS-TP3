@@ -1,4 +1,38 @@
-"""Anima una corrida completa a partir de estados por evento y colisiones registradas."""
+"""Anima una corrida completa a partir de los estados grabados por evento.
+
+Correccion de catedra (mail recalcando un error comun): "no esta permitido
+ningun tipo de interpolacion, busqueda o uso de tiempos que no correspondan
+a eventos. Ni para animar, ni para ningun otro fin." La version anterior de
+este script violaba justo eso: muestreaba tiempos de reloj de reproduccion
+(frame * speed / fps) e interpolaba linealmente la posicion de cada
+particula entre el estado anterior y el siguiente para ese instante
+inventado.
+
+Esta version no hace eso. Cada frame del GIF es exactamente un estado que
+Java escribio en states_*.csv (un tiempo de evento real, con la posicion tal
+cual quedo registrada) -- nunca se inventa ni se busca una posicion en un
+tiempo intermedio. Entre dos frames consecutivos las particulas se ven
+"quietas" y saltan a la posicion del proximo evento en cuanto este ocurre,
+en vez de deslizarse suavemente (eso ultimo seria interpolar).
+
+La UNICA libertad que se toma este script es sobre cuanto tiempo real dura
+cada frame en el GIF (no sobre que posicion mostrar): la duracion de cada
+frame es proporcional al Delta t simulado real hasta el proximo evento
+(escalado por SPEED), acotada entre MIN_FRAME_MS y MAX_FRAME_MS solo por
+motivos de reproduccion (un frame de 0 ms no se ve, y un tramo sin eventos
+de varios segundos no deberia congelar la animacion). Esa duracion es una
+decision de reproduccion del GIF, no una posicion calculada: nunca se
+modifica ni se interpola el dato en si.
+
+No requiere everyEvents=1 ni writeCollisions=true (a diferencia de la
+version anterior, que reconstruia cada colision una por una para poder
+interpolar "suave"): al no interpolar, ya no hace falta el detalle
+evento-a-evento -- alcanza con cualquier corrida que tenga writeStates=true.
+Un everyEvents mas alto simplemente anima con eventos reales mas espaciados
+entre si (sigue siendo un tiempo real, solo que se salta eventos reales en
+vez de mostrar todos), lo cual mantiene el tamano del GIF manejable en
+configuraciones con muchas colisiones (ver diffusion_animations.py).
+"""
 import math
 from datetime import datetime, timezone
 from itertools import groupby
@@ -6,21 +40,26 @@ from itertools import groupby
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.animation import PillowWriter
 from matplotlib.patches import Circle
+from PIL import Image
 
 from common import latest_run, one_file, rows
 
 # Opciones de reproduccion locales; no afectan la simulacion ni su configuracion.
-FPS = 20
-SPEED = 2.0
+FPS = 20                 # solo se usa para el piso de duracion (1000/FPS) y el
+                          # hold del ultimo frame -- no se muestrea a esta tasa
+SPEED = 2.0               # segundos simulados por segundo real de video
+MIN_FRAME_MS = round(1000 / FPS)  # piso de duracion por frame (legibilidad)
+MAX_FRAME_MS = 3000        # techo de duracion por frame (que un tramo sin
+                            # eventos no congele la animacion varios segundos)
 
 
 def frames(run, metadata):
+    """Itera los estados grabados en states_*.csv, en orden, uno por cada
+    (time, event) real -- nunca un tiempo inventado ni buscado entre
+    eventos."""
     n = metadata["config"]["particles"]["count"]
-    collisions = iter(rows(one_file(run, "collisions_*.csv")))
-    previous_event = 0
-    previous_time = 0.0
+    previous_time = None
     initial_ids = None
     grouped = groupby(rows(one_file(run, "states_*.csv")),
                       key=lambda row: (float(row["time"]), int(row["event"])))
@@ -33,21 +72,12 @@ def frames(run, metadata):
             if time != 0 or event != 0:
                 raise ValueError("Falta el estado inicial")
             initial_ids = ids
-        else:
-            if ids != initial_ids or time < previous_time:
-                raise ValueError("IDs o tiempos inconsistentes en states")
-            if event == previous_event + 1:
-                collision = next(collisions, None)
-                if collision is None or int(collision["event"]) != event or float(collision["time"]) != time:
-                    raise ValueError(f"Falta la colision correspondiente al evento {event}")
-            elif not (event == previous_event and time == metadata["finalTime"]):
-                raise ValueError("Faltan estados intermedios: usar everyEvents=1")
-        previous_time, previous_event = time, event
+        elif ids != initial_ids or time < previous_time:
+            raise ValueError("IDs o tiempos inconsistentes en states")
+        previous_time = time
         yield time, [(float(p["x"]), float(p["y"]), p["state"]) for p in particles]
-    if initial_ids is None or previous_event != metadata["totalEvents"] or previous_time != metadata["finalTime"]:
-        raise ValueError("Falta el estado final completo")
-    if next(collisions, None) is not None:
-        raise ValueError("Hay colisiones sin estado asociado")
+    if initial_ids is None or previous_time != metadata["finalTime"]:
+        raise ValueError("Falta el estado final")
 
 
 def main():
@@ -56,58 +86,70 @@ def main():
         raise ValueError("FPS debe ser entero positivo y SPEED positivo y finito")
     run, metadata = latest_run()
     output = metadata["config"]["output"]
-    if not output["writeStates"] or not output["writeCollisions"] or output["everyEvents"] != 1:
-        raise ValueError("Esta corrida no permite reconstruir todos los choques. Generar otra con "
-                     "writeStates=true, writeCollisions=true y everyEvents=1")
+    if not output["writeStates"]:
+        raise ValueError("Esta corrida no grabo estados. Generar otra con writeStates=true")
     table = metadata["config"]["simulation"]
     radius = metadata["config"]["particles"]["radius"]
-    stream = frames(run, metadata)
-    current = next(stream)
-    following = next(stream, None)
+
+    # Primera pasada (liviana, solo tiempos): duracion de cada frame en el
+    # GIF, proporcional al Delta t real hasta el proximo evento.
+    times = [time for time, _ in frames(run, metadata)]
+    if len(times) < 2:
+        raise ValueError("Se necesitan al menos 2 estados grabados para animar")
+    durations_ms = [
+        int(max(MIN_FRAME_MS, min(MAX_FRAME_MS, 1000 * (times[i + 1] - times[i]) / speed)))
+        for i in range(len(times) - 1)
+    ]
+    durations_ms.append(MIN_FRAME_MS)  # el ultimo frame no tiene "siguiente" del
+    # cual derivar su Delta t: se sostiene un instante fijo y corto.
+
     fig, ax = plt.subplots(figsize=(7, 4.5))
     ax.set(xlim=(0, table["length"]), ylim=(0, table["width"]), xlabel="x [m]", ylabel="y [m]")
     ax.set_aspect("equal")
+    fig.set_dpi(90)
     for obstacle in metadata["config"]["obstacles"]:
         ax.add_patch(Circle((obstacle["x"], obstacle["y"]), obstacle["radius"], color="0.5"))
     low = (table["width"] - table["goalSize"]) / 2
     for x in (0, table["length"]):
         ax.plot([x, x], [low, low + table["goalSize"]], color="tab:green", linewidth=4, clip_on=False)
-    circles = []
-    for x, y, state in current[1]:
-        circle = Circle((x, y), radius, color="tab:blue")
-        ax.add_patch(circle)
-        circles.append(circle)
     title = ax.set_title("")
     fig.tight_layout()
+    circles = []
+    canvas = fig.canvas
+
+    def render_frames():
+        # Segunda pasada (re-lee states_*.csv): renderiza y entrega un frame
+        # PIL por vez -- nunca se guardan todos los frames renderizados en
+        # memoria a la vez, algo importante con corridas de cientos de miles
+        # de eventos.
+        for time, particles in frames(run, metadata):
+            if not circles:
+                for x, y, state in particles:
+                    circle = Circle((x, y), radius, color="tab:blue")
+                    ax.add_patch(circle)
+                    circles.append(circle)
+            used = 0
+            for circle, (x, y, state) in zip(circles, particles):
+                circle.center = x, y
+                circle.set_color("tab:red" if state == "USED" else "tab:blue")
+                used += state == "USED"
+            title.set_text(f"t = {time:.2f} s | usadas: {used}/{len(circles)}")
+            canvas.draw()
+            width, height = canvas.get_width_height()
+            yield Image.frombuffer("RGBA", (width, height), canvas.buffer_rgba(),
+                                    "raw", "RGBA", 0, 1).convert("RGB")
+
     folder = run / "plots"
     folder.mkdir(exist_ok=True)
     path = folder / f"animation_{datetime.now(timezone.utc):%Y%m%d_%H%M%S_%f}.gif"
-    end = metadata["finalTime"]
-    count = math.ceil(end * fps / speed) + 1
-    writer = PillowWriter(fps=fps)
     try:
-        with writer.saving(fig, str(path), dpi=90):
-            for frame in range(count):
-                time = min(frame * speed / fps, end)
-                # Consumir todos los eventos hasta este instante, incluidos los simultaneos.
-                while following is not None and following[0] <= time:
-                    current = following
-                    following = next(stream, None)
-                fraction = 0 if following is None else (time - current[0]) / (following[0] - current[0])
-                used = 0
-                for i, (x, y, state) in enumerate(current[1]):
-                    if following is not None:
-                        nx, ny, _ = following[1][i]
-                        x, y = x + fraction * (nx - x), y + fraction * (ny - y)
-                    circles[i].center = x, y
-                    circles[i].set_color("tab:red" if state == "USED" else "tab:blue")
-                    used += state == "USED"
-                title.set_text(f"t = {time:.2f} s | usadas: {used}/{len(circles)}")
-                writer.grab_frame()
+        frame_images = render_frames()
+        first = next(frame_images)
+        first.save(str(path), save_all=True, append_images=frame_images,
+                   duration=durations_ms, loop=0)
         print(path)
     finally:
         plt.close(fig)
-        stream.close()
     return path  # util para orquestar animaciones desde otro script (ver
     # diffusion_animations.py), sin cambiar el comportamiento por linea de
     # comandos existente

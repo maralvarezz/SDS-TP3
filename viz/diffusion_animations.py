@@ -2,15 +2,20 @@
 punto 1.3 (mesa vacia + 1 representante final por familia, ver
 diffusion.py): misma seed y mismos obstaculos que usa diffusion.py para
 calcular D -- misma configuracion + misma seed = misma fisica
-(reproducibilidad, AGENTS.md seccion 19) -- pero con output.everyEvents=1 y
-output.writeCollisions=true, que es lo que exige animation.py para
-reconstruir cada colision uno a uno. diffusion.py usa everyEvents=25 y
-writeCollisions=false (mucho mas liviano, alcanza para el DCM pero no para
-animar sin saltos).
+(reproducibilidad, AGENTS.md seccion 19).
 
-ADVERTENCIA: con maxTime=100s completo (igual que diffusion.py) el
-states_*.csv de competencia_R=0.3 puede llegar a ~330000 eventos x 100
-particulas = ~33 millones de filas -- tarda bastante y pesa varios GB. Se
+Usa el mismo output.everyEvents=25 que diffusion.py (no 1): animation.py ya
+no reconstruye cada colision para interpolar entre ellas -- correccion de
+catedra sobre un error comun ("no esta permitido ningun tipo de
+interpolacion, busqueda o uso de tiempos que no correspondan a eventos"),
+ver animation.py -- asi que no hace falta everyEvents=1 ni writeCollisions;
+cada frame del GIF es directamente uno de estos estados reales, mas
+espaciados entre si pero sin inventar nada entre medio.
+
+Con everyEvents=25 y maxTime=100s completo (igual que diffusion.py), incluso
+la configuracion mas pesada (competencia_R=0.3, ~330000 eventos totales)
+graba del orden de ~13000 estados x 100 particulas = ~1.3 millones de filas
+-- mucho mas liviano que con everyEvents=1 (~33 millones de filas). Se
 recorre una config a la vez y se anima antes de pasar a la siguiente para no
 necesitar guardar mas de una corrida "pesada" simultaneamente.
 
@@ -45,8 +50,8 @@ def build_animation_config(base, obstacles, seed):
     cfg["simulation"]["maxTime"] = diffusion.MAX_TIME
     cfg["simulation"]["seed"] = seed
     cfg["particles"]["count"] = diffusion.N
-    cfg["output"] = {"everyEvents": 1, "writeStates": True,
-                      "writeGoals": True, "writeCollisions": True}
+    cfg["output"] = {"everyEvents": diffusion.EVERY_EVENTS, "writeStates": True,
+                      "writeGoals": True, "writeCollisions": False}
     cfg["obstacles"] = obstacles
     return cfg
 
