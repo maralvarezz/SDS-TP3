@@ -114,7 +114,7 @@ def draw_table(config, ax=None, show_radius=True, title=None):
     ax.set_aspect("equal")
     ax.axis("off")
     if title:
-        ax.set_title(title, fontsize=13)
+        ax.set_title(title, fontsize=20, fontweight="bold")
     return fig, ax
 
 

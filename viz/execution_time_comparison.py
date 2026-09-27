@@ -55,8 +55,7 @@ def plot(rsa_runtimes, hex_runtimes):
     ax.errorbar(ns_h, means_h, yerr=stds_h, fmt="o-", capsize=4, color="tab:green",
                 label="Empaquetado hexagonal")
 
-    ax.set(xlabel="N (particulas)", ylabel="Tiempo de ejecucion [ms]",
-           title="Punto 1.1 - Tiempo de ejecucion vs N (mesa vacia, tf=30s)")
+    ax.set(xlabel="N (particulas)", ylabel="Tiempo de ejecucion [ms]")
     ax.set_yscale("log")
     ax.grid(alpha=0.25, which="both")
     ax.legend()

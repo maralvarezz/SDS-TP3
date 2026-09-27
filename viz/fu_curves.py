@@ -83,7 +83,7 @@ def save_curve(label, run, metadata):
     print(f"  curva Fu(t) guardada: '{label}' ({CURVES_PATH})")
 
 
-def plot_curves(labels=None, name="comparison"):
+def plot_curves(labels=None, name="comparison", title=None):
     curves = load_curves()
     if labels is not None:
         curves = {label: curves[label] for label in labels if label in curves}
@@ -98,8 +98,9 @@ def plot_curves(labels=None, name="comparison"):
         if curve.get("t90") is not None:
             ax.axvline(curve["t90"], linestyle=":", color=color, alpha=0.5)
     ax.axhline(0.9, linestyle="--", color="0.5", linewidth=1, label="90 %")
-    ax.set(xlabel="Tiempo simulado [s]", ylabel="Fu = goles / N", ylim=(0, 1.03),
-           title="Punto 1.2 - Fu(t) por configuracion")
+    ax.set(xlabel="Tiempo simulado [s]", ylabel="Fu = goles / N", ylim=(0, 1.03))
+    if title:
+        ax.set_title(title)
     ax.grid(alpha=0.25)
     ax.legend(fontsize=8, ncol=2)
     folder = OUTPUT / "experiment_1_2_plots"

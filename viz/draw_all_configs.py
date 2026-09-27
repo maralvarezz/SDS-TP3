@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 
 import diffusion
 import draw_table
+import fu_curves
 
 MAX_LABELED_OBSTACLES = 3  # con mas obstaculos las etiquetas R_k se pisan
 
@@ -21,16 +22,19 @@ def main():
     sim = base["simulation"]
     length, width, goal = sim["length"], sim["width"], sim["goalSize"]
 
+    # Solo las 4 configuraciones finales (mesa vacia + 1 representante final
+    # por familia), las mismas que diffusion.py/fu_curves_summary.py -- no la
+    # config de competencia "vigente" en input/config.json aparte.
     tables = {label: builder(length, width, goal) for label, builder in diffusion.BUILDERS.items()}
-    tables["competencia (input/config.json)"] = base["obstacles"]
 
     folder = draw_table.ROOT / "output" / "table_plots"
     folder.mkdir(parents=True, exist_ok=True)
     stamp = f"{datetime.now(timezone.utc):%Y%m%d_%H%M%S}"
     for label, obstacles in tables.items():
         config = {"simulation": sim, "obstacles": obstacles}
+        display_name = fu_curves.DISPLAY_NAMES.get(label, label)
         fig, _ = draw_table.draw_table(config, show_radius=len(obstacles) <= MAX_LABELED_OBSTACLES,
-                                        title=label)
+                                        title=display_name)
         fig.tight_layout()
         path = folder / f"table_{re.sub(r'[^A-Za-z0-9]+', '_', label).strip('_')}_{stamp}.png"
         fig.savefig(path, dpi=160)

@@ -175,8 +175,7 @@ def plot(results):
     if empty_mean is not None:
         ax.axhline(empty_mean, color="tab:blue", linestyle="--", label="Mesa vacia")
         ax.axhspan(empty_mean - empty_std, empty_mean + empty_std, color="tab:blue", alpha=0.15)
-    ax.set(xlabel="Radio de los semicirculos libres frente a los arcos [m]", ylabel="<t90> [s]",
-           title=f"Punto 1.2 - Competencia: <t90> vs radio libre frente a los arcos (N={N})")
+    ax.set(xlabel="Radio de los semicirculos libres frente a los arcos [m]", ylabel="<t90> [s]")
     ax.grid(alpha=0.25)
     # Adentro del grafico, abajo a la izquierda: ahi la curva esta en su punto
     # mas alto (r=0.24) y queda espacio libre por debajo sin tapar ni la
