@@ -128,6 +128,8 @@ public final class OutputManager implements SimulationObserver, AutoCloseable {
         if (goals == null) return;
         goals.write(time + "," + eventNumber + "," + particleId + "," + side + "," + totalGoals + "," + usedFraction);
         goals.newLine();
+        // Permitir que un lector externo observe cada conversion durante la corrida.
+        goals.flush();
     }
 
     public void finish(SimulationResult result) throws IOException {

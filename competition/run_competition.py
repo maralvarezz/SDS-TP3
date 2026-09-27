@@ -13,6 +13,8 @@ import csv
 import json
 import subprocess
 import sys
+import tempfile
+import time
 from pathlib import Path
 
 
@@ -21,6 +23,7 @@ COMPETITION_CONFIG_PATH = ROOT / "input" / "competition_config.json"
 OBSTACLES_PATH = ROOT / "input" / "obstacles.txt"
 JAR_PATH = ROOT / "sims" / "target" / "sds_tp3_g8.jar"
 JAVA_TIMEOUT_SECONDS = 25
+POLL_SECONDS = 0.05
 
 COMPETITION_SIMULATION = {
     "length": 1.20,
@@ -116,14 +119,30 @@ def read_run_result(directory):
     }
 
 
-def print_run_result(result):
-    print("----- competencia -----")
-    print(f"seed: {result['seed']}")
-    print(f"t90: {result['t90']:.2f}" if result["t90"] is not None else "t90: no alcanzado")
+def print_run_result(result, include_header=True):
+    if include_header:
+        print("----- competencia -----")
+        print(f"seed: {result['seed']}")
+    print(f"t90: {result['t90']:.2f}s" if result["t90"] is not None else "t90: no alcanzado")
     print("-----------------------")
 
 
-def run_competition(seed):
+def print_new_conversions(directory, printed, particle_count):
+    """Leer solo filas completas; una escritura parcial se retoma en el proximo poll."""
+    files = list(directory.glob("goals_*.csv"))
+    if not files:
+        return printed
+    contents = one_file(directory, "goals_*.csv").read_text(encoding="utf-8")
+    complete = contents[:contents.rfind("\n") + 1]
+    for row in csv.DictReader(complete.splitlines()):
+        total = int(row["totalGoals"])
+        if total > printed:
+            print(f"convertidas: {total} / {particle_count}", flush=True)
+            printed = total
+    return printed
+
+
+def run_competition(seed, show_progress=False):
     """Ejecuta una corrida y devuelve los datos que imprime la CLI.
 
     Retorna:
@@ -134,28 +153,54 @@ def run_competition(seed):
     competition_config = build_competition_config(java_seed)
 
     COMPETITION_CONFIG_PATH.write_text(json.dumps(competition_config, indent=2) + "\n", encoding="utf-8")
-    try:
-        result = subprocess.run(
+    # Archivos temporales evitan bloquear pipes y permiten conservar el timeout
+    # incluso si Java tarda en anunciar su carpeta de salida.
+    with tempfile.TemporaryDirectory(prefix="competition_") as logs, \
+            (Path(logs) / "stdout.txt").open("w", encoding="utf-8") as stdout, \
+            (Path(logs) / "stderr.txt").open("w", encoding="utf-8") as stderr:
+        process = subprocess.Popen(
             ["java", "-jar", str(JAR_PATH), str(COMPETITION_CONFIG_PATH.relative_to(ROOT))],
             cwd=ROOT,
-            capture_output=True,
-            text=True,
-            timeout=JAVA_TIMEOUT_SECONDS,
+            stdout=stdout,
+            stderr=stderr,
         )
-    except subprocess.TimeoutExpired as error:
-        raise RuntimeError(
-            f"La corrida Java supero el limite de {JAVA_TIMEOUT_SECONDS} segundos"
-        ) from error
-    if result.returncode != 0:
-        details = result.stderr.strip() or result.stdout.strip()
-        raise RuntimeError(f"La corrida fallo con codigo de salida {result.returncode}: {details}")
-    return read_run_result(run_directory_from_stdout(result.stdout))
+        started = time.monotonic()
+        directory = None
+        printed = 0
+        try:
+            while True:
+                finished = process.poll() is not None
+                if directory is None:
+                    output = (Path(logs) / "stdout.txt").read_text(encoding="utf-8", errors="replace")
+                    complete = output[:output.rfind("\n") + 1]
+                    if any(line.startswith("Archivos: ") for line in complete.splitlines()):
+                        directory = run_directory_from_stdout(complete)
+                if show_progress and directory is not None:
+                    printed = print_new_conversions(directory, printed, competition_config["particles"]["count"])
+                if finished:
+                    break
+                if time.monotonic() - started >= JAVA_TIMEOUT_SECONDS:
+                    raise RuntimeError(
+                        f"La corrida Java supero el limite de {JAVA_TIMEOUT_SECONDS} segundos"
+                    )
+                time.sleep(POLL_SECONDS)
+        finally:
+            if process.poll() is None:
+                process.kill()
+            process.wait()
+        output = (Path(logs) / "stdout.txt").read_text(encoding="utf-8", errors="replace")
+        if process.returncode != 0:
+            details = (Path(logs) / "stderr.txt").read_text(encoding="utf-8", errors="replace").strip() or output.strip()
+            raise RuntimeError(f"La corrida fallo con codigo de salida {process.returncode}: {details}")
+        return read_run_result(run_directory_from_stdout(output))
 
 
 def main():
     args = parse_args()
     try:
-        print_run_result(run_competition(args.seed))
+        print("----- competencia -----", flush=True)
+        print(f"seed: {to_java_long(args.seed)}", flush=True)
+        print_run_result(run_competition(args.seed, show_progress=True), include_header=False)
     except (OSError, RuntimeError) as error:
         print(f"Error: {error}", file=sys.stderr)
         return 1
