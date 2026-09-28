@@ -125,7 +125,7 @@ def main():
         stds = [results[r][1] for r in rs]
         fig, ax = plt.subplots(figsize=(7, 4.5))
         ax.errorbar(rs, means, yerr=stds, fmt="o-", capsize=4, color="tab:blue")
-        ax.set(xlabel="Radio del obstaculo unico centrado [m]", ylabel="<t90> [s]",
+        ax.set(xlabel="Radio del obstaculo unico centrado (m)", ylabel="<t90> (s)",
                title="Punto 1.4 - Busqueda de competencia: <t90> vs R (K=1, x=L/2, y=W/2)")
         ax.grid(alpha=0.25)
         folder = OUTPUT / "competition_search_plots"

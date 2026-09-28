@@ -16,13 +16,25 @@ tiempo intermedio. Entre dos frames consecutivos las particulas se ven
 en vez de deslizarse suavemente (eso ultimo seria interpolar).
 
 La UNICA libertad que se toma este script es sobre cuanto tiempo real dura
-cada frame en el GIF (no sobre que posicion mostrar): la duracion de cada
-frame es proporcional al Delta t simulado real hasta el proximo evento
-(escalado por SPEED), acotada entre MIN_FRAME_MS y MAX_FRAME_MS solo por
-motivos de reproduccion (un frame de 0 ms no se ve, y un tramo sin eventos
-de varios segundos no deberia congelar la animacion). Esa duracion es una
-decision de reproduccion del GIF, no una posicion calculada: nunca se
-modifica ni se interpola el dato en si.
+cada frame en el GIF (no sobre que posicion mostrar ni sobre que tiempos
+existen): la duracion de cada frame es proporcional al Delta t simulado
+real hasta el proximo evento mostrado (escalado por SPEED, ahora 1.0 =
+un segundo simulado dura un segundo real), acotada entre MIN_FRAME_MS y
+MAX_FRAME_MS solo por motivos de reproduccion (un frame de 0 ms no se ve,
+y un tramo sin eventos de varios segundos no deberia congelar la
+animacion). Esa duracion es una decision de reproduccion del GIF, no una
+posicion calculada: nunca se modifica ni se interpola el dato en si.
+
+Cuando ocurren varios eventos reales casi al mismo tiempo (tipico en
+choques encadenados), mostrar cada uno por separado forzaria a estirar
+cada uno hasta MIN_FRAME_MS y la animacion se veria en "camara lenta"
+aunque en la realidad esa racha dura una fraccion de segundo. Para
+mantener la correspondencia 1 a 1 con el tiempo real, este script agrupa
+esos eventos consecutivos y muestra solo el ULTIMO estado real de cada
+grupo (nunca uno inventado) durante el tiempo real acumulado de todo el
+grupo. Sigue sin haber interpolacion ni busqueda de tiempos: se elige
+CUALES de los estados ya grabados por Java se muestran, nunca se calcula
+una posicion en un tiempo que no sea el de un evento real.
 
 No requiere everyEvents=1 ni writeCollisions=true (a diferencia de la
 version anterior, que reconstruia cada colision una por una para poder
@@ -48,8 +60,8 @@ from common import latest_run, one_file, rows
 # Opciones de reproduccion locales; no afectan la simulacion ni su configuracion.
 FPS = 20                 # solo se usa para el piso de duracion (1000/FPS) y el
                           # hold del ultimo frame -- no se muestrea a esta tasa
-SPEED = 2.0               # segundos simulados por segundo real de video
-MIN_FRAME_MS = round(1000 / FPS)  # piso de duracion por frame (legibilidad)
+SPEED = 1.0               # segundos simulados por segundo real de video (1.0 = tiempo real)
+MIN_FRAME_MS = round(1000 / FPS)  # piso de duracion por frame agrupado (legibilidad)
 MAX_FRAME_MS = 3000        # techo de duracion por frame (que un tramo sin
                             # eventos no congele la animacion varios segundos)
 
@@ -91,20 +103,32 @@ def main():
     table = metadata["config"]["simulation"]
     radius = metadata["config"]["particles"]["radius"]
 
-    # Primera pasada (liviana, solo tiempos): duracion de cada frame en el
-    # GIF, proporcional al Delta t real hasta el proximo evento.
+    # Primera pasada (liviana, solo tiempos): decide QUE estados reales se
+    # muestran (agrupando rachas de eventos casi simultaneos) y cuanto dura
+    # cada uno en el GIF, proporcional al Delta t real acumulado del grupo.
     times = [time for time, _ in frames(run, metadata)]
     if len(times) < 2:
         raise ValueError("Se necesitan al menos 2 estados grabados para animar")
+
+    selected = [0]  # indices (en `times`) de los estados reales que se van a mostrar
+    last_shown_time = times[0]
+    for i in range(1, len(times) - 1):
+        if (times[i] - last_shown_time) * 1000 / speed >= MIN_FRAME_MS:
+            selected.append(i)
+            last_shown_time = times[i]
+    if selected[-1] != len(times) - 1:
+        selected.append(len(times) - 1)  # el estado final siempre se muestra
+
     durations_ms = [
-        int(max(MIN_FRAME_MS, min(MAX_FRAME_MS, 1000 * (times[i + 1] - times[i]) / speed)))
-        for i in range(len(times) - 1)
+        int(max(MIN_FRAME_MS, min(MAX_FRAME_MS, 1000 * (times[selected[k + 1]] - times[selected[k]]) / speed)))
+        for k in range(len(selected) - 1)
     ]
     durations_ms.append(MIN_FRAME_MS)  # el ultimo frame no tiene "siguiente" del
     # cual derivar su Delta t: se sostiene un instante fijo y corto.
+    selected_set = frozenset(selected)
 
     fig, ax = plt.subplots(figsize=(7, 4.5))
-    ax.set(xlim=(0, table["length"]), ylim=(0, table["width"]), xlabel="x [m]", ylabel="y [m]")
+    ax.set(xlim=(0, table["length"]), ylim=(0, table["width"]), xlabel="x (m)", ylabel="y (m)")
     ax.set_aspect("equal")
     fig.set_dpi(90)
     for obstacle in metadata["config"]["obstacles"]:
@@ -122,7 +146,9 @@ def main():
         # PIL por vez -- nunca se guardan todos los frames renderizados en
         # memoria a la vez, algo importante con corridas de cientos de miles
         # de eventos.
-        for time, particles in frames(run, metadata):
+        for idx, (time, particles) in enumerate(frames(run, metadata)):
+            if idx not in selected_set:
+                continue
             if not circles:
                 for x, y, state in particles:
                     circle = Circle((x, y), radius, color="tab:blue")

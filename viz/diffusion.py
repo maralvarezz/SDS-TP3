@@ -295,7 +295,7 @@ def plot_msd_all(results):
     ax.set_ylim(0, ymax * 1.08)  # el 0 explicito ancla el origen (0,0) --
     # por donde pasan todas las rectas de ajuste -- a la esquina inferior
     # izquierda, en vez del margen automatico de matplotlib
-    ax.set(xlabel="Tiempo simulado [s]", ylabel="DCM [m^2]")
+    ax.set(xlabel="Tiempo simulado (s)", ylabel="DCM (m^2)")
     ax.yaxis.set_major_locator(MaxNLocator(nbins=12))  # mas marcas en el eje y
     ax.grid(alpha=0.25)
     ax.legend(fontsize=8)
@@ -317,7 +317,7 @@ def plot_correlation(results):
         ax.errorbar(r["t90_mean"], r["d_mean"], xerr=r["t90_std"], yerr=r["d_std"],
                     fmt="o", color=color, markersize=8, capsize=4,
                     label=fu_curves.DISPLAY_NAMES.get(label, label))
-    ax.set(xlabel="t90 [s]", ylabel="D [m^2/s]")
+    ax.set(xlabel="t90 (s)", ylabel="D (m^2/s)")
     ax.grid(alpha=0.25)
     ax.legend(fontsize=8)
     folder = OUTPUT / "experiment_1_3_plots"

@@ -33,7 +33,7 @@ def goals_plot(run, metadata, folder):
         ax.axvline(t90, linestyle=":", color="tab:red", label=f"t90 = {t90:.3f} s")
     else:
         ax.text(0.98, 0.1, "No se alcanzó t90", ha="right", transform=ax.transAxes)
-    ax.set(xlabel="Tiempo simulado [s]", ylabel="Fu = goles / N",
+    ax.set(xlabel="Tiempo simulado (s)", ylabel="Fu",
            ylim=(0, 1.03), xlim=(0, final_time), title="Punto 1.2 · Evolución hacia t90")
     ax.grid(alpha=0.25)
     ax.legend()

@@ -181,7 +181,7 @@ def plot(results):
     if empty_mean is not None:
         ax.axhline(empty_mean, color="tab:blue", linestyle="--", label="Mesa vacia")
         ax.axhspan(empty_mean - empty_std, empty_mean + empty_std, color="tab:blue", alpha=0.15)
-    ax.set(xlabel="Distancia centro-a-centro circulo grande -> circulos chicos [m]", ylabel="<t90> [s]")
+    ax.set(xlabel="Distancia centro a centro (m)", ylabel="<t90> (s)")
     ax.grid(alpha=0.25)
     ax.legend()
     folder = OUTPUT / "experiment_1_2_plots"

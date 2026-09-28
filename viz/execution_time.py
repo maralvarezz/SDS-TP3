@@ -101,7 +101,7 @@ def plot(runtimes):
         print(f"N={n}: {len(runtimes[n])} corridas, media={m:.1f} ms, std={s:.1f} ms")
     fig, ax = plt.subplots(figsize=(7, 4.5))
     ax.errorbar(ns, means, yerr=stds, fmt="o-", capsize=4, color="tab:blue")
-    ax.set(xlabel="N (particulas)", ylabel="Tiempo de ejecucion [ms]",
+    ax.set(xlabel="N (particulas)", ylabel="Tiempo de ejecucion (ms)",
            title="Punto 1.1 - Tiempo de ejecucion vs N (mesa vacia, tf=30s)")
     ax.grid(alpha=0.25)
     folder = OUTPUT / "experiment_1_1_plots"

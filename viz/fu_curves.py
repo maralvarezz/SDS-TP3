@@ -98,7 +98,7 @@ def plot_curves(labels=None, name="comparison", title=None):
         if curve.get("t90") is not None:
             ax.axvline(curve["t90"], linestyle=":", color=color, alpha=0.5)
     ax.axhline(0.9, linestyle="--", color="0.5", linewidth=1, label="90 %")
-    ax.set(xlabel="Tiempo simulado [s]", ylabel="Fu = goles / N", ylim=(0, 1.03))
+    ax.set(xlabel="Tiempo simulado (s)", ylabel="Fu", ylim=(0, 1.03))
     if title:
         ax.set_title(title)
     ax.grid(alpha=0.25)

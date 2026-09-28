@@ -174,7 +174,7 @@ def plot(results):
     if empty_mean is not None:
         ax.axhline(empty_mean, color="tab:blue", linestyle="--", label=f"Mesa vacia (<t90>={empty_mean:.2f} s)")
         ax.axhspan(empty_mean - empty_std, empty_mean + empty_std, color="tab:blue", alpha=0.15)
-    ax.set(ylabel="<t90> [s]", title=f"Punto 1.2 - Competencia: variantes de zona libre (N={N})")
+    ax.set(ylabel="<t90> (s)", title=f"Punto 1.2 - Competencia: variantes de zona libre (N={N})")
     ax.grid(alpha=0.25, axis="y")
     ax.legend()
     folder = OUTPUT / "experiment_1_2_plots"
