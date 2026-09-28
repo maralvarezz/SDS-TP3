@@ -6,11 +6,10 @@ ubicados simetricamente sobre el eje longitudinal, centrados en y=W/2.
 """
 import math
 
-TOTAL_AREA_RADIUS = 0.15  # area total fija = area de un unico circulo de este radio
+TOTAL_AREA_RADIUS = 0.15
 
 
 def radius_for(k):
-    # k * pi * Rk^2 = pi * TOTAL_AREA_RADIUS^2
     return TOTAL_AREA_RADIUS / math.sqrt(k)
 
 
@@ -21,7 +20,7 @@ def layout(k, length, width):
     if k == 1:
         centers_x = [center]
     elif k == 2:
-        offset = length * 5 / 24  # separacion moderada, ver validate_layout
+        offset = length * 5 / 24
         centers_x = [center - offset, center + offset]
     elif k == 3:
         offset = length / 4

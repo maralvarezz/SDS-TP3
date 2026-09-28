@@ -50,7 +50,6 @@ public final class OutputManager implements SimulationObserver, AutoCloseable {
                 createdDirectory = Files.createDirectory(output.resolve(configName + "_" + formatter.format(directoryTime)));
                 break;
             } catch (FileAlreadyExistsException collision) {
-                // Mantener el formato sin sobrescribir ni agregar sufijos aleatorios.
                 directoryTime = directoryTime.plusMillis(1);
             }
         }
@@ -128,7 +127,6 @@ public final class OutputManager implements SimulationObserver, AutoCloseable {
         if (goals == null) return;
         goals.write(time + "," + eventNumber + "," + particleId + "," + side + "," + totalGoals + "," + usedFraction);
         goals.newLine();
-        // Permitir que un lector externo observe cada conversion durante la corrida.
         goals.flush();
     }
 

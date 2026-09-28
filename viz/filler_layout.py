@@ -31,8 +31,8 @@ import math
 
 from hexagonal_packing import _lattice
 
-FILLER_RADIUS = 0.02  # > r_particula (0.0175), mismo valor que SMALL_RADIUS en la familia B
-MARGIN_FACTOR = 1.001  # separa apenas mas que la tangencia exacta, evita solapar por redondeo
+FILLER_RADIUS = 0.02
+MARGIN_FACTOR = 1.001
 
 
 def goal_semicircle_layout(free_radius, length, width,
@@ -51,30 +51,10 @@ def goal_semicircle_layout(free_radius, length, width,
     return obstacles
 
 
-# --- Variantes propuestas para mejorar el mejor semicirculo (free_radius=0.30,
-# <t90>=13.16 s, ver conversacion): en vez de un semicirculo simetrico, donde
-# buena parte del borde recto de cada pared corta (fuera de los d=0.20 m del
-# arco) es "pared muerta" que no suma gol, se prueban 3 variantes que apuntan
-# a mejorar el "apunte" hacia el arco sin volver a los problemas de
-# apiñamiento que empeoraban el t90 a free_radius chico:
-#
-# 1. "funnel": la zona libre es un trapezoide que calza exactamente con el
-#    ancho del arco (d) en la pared y se abre linealmente hasta
-#    far_half_width a una profundidad `depth` dentro de la mesa. Toda la
-#    pared recta que toca la cavidad es el arco (no hay pared muerta). Con
-#    depth=0.45 y far_half_width=0.30 el area libre total (0.36 m^2 para los
-#    2 arcos) termina siendo mayor que la del semicirculo R=0.30 (0.2827
-#    m^2), asi que no deberia apianar mas que el mejor caso ya medido.
-# 2. "semicircle_guides": se mantiene el semicirculo R=0.30 (el mejor medido)
-#    y se agregan 2 obstaculos chicos "guia" justo por fuera de cada borde
-#    del arco (misma idea que el "paragolpes" ya descartado de la familia B,
-#    pero ahora adentro de la cavidad libre de la familia C) para desviar
-#    particulas hacia adentro del arco en vez de dejarlas rebotar al azar.
-# 3. "funnel_guides": combina 1 y 2.
 FUNNEL_DEPTH = 0.45
 FUNNEL_FAR_HALF_WIDTH = 0.30
 GUIDE_RADIUS = 0.025
-X_GUIDE = 0.10  # distancia de cada guia a la pared corta de su arco
+X_GUIDE = 0.10
 
 
 def _funnel_free(x, y, goal_x, width, depth, far_half_width, goal_size, mirrored):
@@ -136,17 +116,7 @@ def family_c_layout(variant, length, width, goal_size,
     return filler + guides
 
 
-# --- Variante "elipse": el semicirculo (free_radius=0.30) es el mejor
-# resultado medido hasta ahora, pero esta acotado por el ancho de la mesa
-# (W/2=0.34 m): no puede crecer mas sin tocar las paredes horizontales. La
-# mesa es bastante mas larga que ancha (L=1.20 vs W=0.68), asi que en vez de
-# angostar la boca (el "funnel", que empeoro todo por crear un cuello de
-# botella) se prueba estirar la cavidad en profundidad: una media elipse con
-# el mismo semieje b que el semicirculo (no toca las paredes horizontales,
-# sin cuello de botella en la boca -- el ancho en x=0 es igual, 2b) pero un
-# semieje a mayor en la direccion longitudinal, dandole a las particulas mas
-# area para no apianarse sin repetir el error del embudo.
-ELLIPSE_B = 0.32  # mismo margen de seguridad que el semicirculo (W/2 - 0.02)
+ELLIPSE_B = 0.32
 
 
 def goal_ellipse_layout(a, length, width, b=ELLIPSE_B,

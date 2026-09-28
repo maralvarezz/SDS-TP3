@@ -2,7 +2,6 @@ package ar.edu.itba.sds.tp3.model;
 
 import java.util.Objects;
 
-/** Estado inmutable de una particula en un instante. */
 public record Particle(int id, Vector2D position, Vector2D velocity,
                        double radius, double mass, ParticleState state) {
     public Particle {

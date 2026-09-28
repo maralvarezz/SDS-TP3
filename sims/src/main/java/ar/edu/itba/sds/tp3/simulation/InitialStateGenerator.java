@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Random;
 
 public final class InitialStateGenerator {
-    // Limite de trabajo por particula, no un parametro fisico.
     private static final int MAX_ATTEMPTS_PER_PARTICLE = 100_000;
 
     public SimulationState generate(SimulationConfig config) {
@@ -75,7 +74,6 @@ public final class InitialStateGenerator {
 
     private boolean isAvailable(Vector2D position, double radius,
                                 List<Particle> particles, List<Obstacle> obstacles) {
-        // Se rechaza todo solapamiento inicial; no se relajan las distancias con tolerancias.
         for (var particle : particles) {
             if (position.distanceTo(particle.position()) < radius + particle.radius()) return false;
         }

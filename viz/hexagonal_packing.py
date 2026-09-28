@@ -19,11 +19,6 @@ aleatorias como siempre.
 """
 import math
 
-# Colchon de seguridad muy por encima del ruido de punto flotante esperado
-# (k*spacing con k~cientos acumula error del orden de 1e-13 a 1e-10), pero
-# muy por debajo de cualquier escala fisica relevante (radius >> 1e-6 m).
-# Garantiza que ninguna posicion generada quede, ni por redondeo, mas alla
-# de Numerics.EPSILON=1e-10 del limite de la mesa.
 SAFETY_MARGIN = 1e-6
 
 
@@ -74,9 +69,6 @@ def hexagonal_positions(length, width, radius, n, margin_factor=1.001):
     feasible_max = _count_for_spacing(length, width, radius, min_spacing)
     if n > feasible_max:
         raise ValueError(f"N={n} supera el maximo hexagonal para este dominio ({feasible_max})")
-    # Busqueda binaria del espaciado mas grande (mas holgado) tal que la
-    # grilla resultante tenga al menos n puntos; a mayor espaciado, menos
-    # puntos entran, asi que la funcion es monotona decreciente en spacing.
     low, high = min_spacing, max(length, width)
     for _ in range(60):
         mid = (low + high) / 2

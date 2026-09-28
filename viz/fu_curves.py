@@ -23,9 +23,6 @@ ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "output"
 CURVES_PATH = OUTPUT / "experiment_1_2_plots" / "fu_curves.json"
 
-# Color fijo por configuracion, compartido por el grafico conjunto de Fu(t) y
-# por los graficos individuales (1.2 y 1.3), para que cada configuracion se
-# vea igual en todos lados. Etiquetas nuevas usan el ciclo por defecto.
 CONFIG_COLORS = {
     "mesa_vacia": "tab:blue",
     "x=0.6": "tab:orange",
@@ -35,11 +32,6 @@ CONFIG_COLORS = {
     "competencia_R=0.3": "tab:brown",
 }
 
-# Nombre de familia para mostrar en leyendas (las etiquetas internas de mas
-# arriba se usan como claves de color/almacenamiento, no como texto legible).
-# Solo cubre las 4 configuraciones "oficiales" (mesa vacia + 1 final por
-# familia); los resultados intermedios (x=0.6, embudo_r=0.02) no aparecen en
-# ningun grafico final, asi que no necesitan nombre de exhibicion.
 DISPLAY_NAMES = {
     "mesa_vacia": "Mesa vacia",
     "R=0.339": "Obstaculo unico",

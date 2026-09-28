@@ -19,15 +19,6 @@ CONFIG_PATH = ROOT / "input" / "config.json"
 JAR = ROOT / "sims" / "target" / "sds_tp3_g8.jar"
 OUTPUT = ROOT / "output"
 
-# Parametros del punto 1.1: mesa vacia (K=0), tf=30s, N variable, >=10 realizaciones por N.
-# El limite superior (430) es el N maximo con el que la colocacion inicial
-# aleatoria por rechazo secuencial (Teorica 3, diapositiva 10) todavia logra
-# ubicar las N particulas de forma confiable: se verifico empiricamente que
-# N=430 empaqueta en 5/5 semillas probadas, N=435 ya falla ocasionalmente y
-# N>=460 falla siempre tras 100000 intentos por particula. Este limite es una
-# propiedad del algoritmo de muestreo (jamming de RSA, ~55% de cobertura),
-# no del maximo geometrico teorico (que con empaquetado hexagonal es ~90%,
-# ver viz/hexagonal_execution_time.py).
 N_VALUES = [25, 50, 100, 150, 200, 250, 300, 350, 400, 430]
 REALIZATIONS = 10
 MAX_TIME = 30.0
@@ -37,8 +28,8 @@ RETRIES = 8
 
 def build_config(base, n, seed):
     cfg = json.loads(json.dumps(base))
-    cfg.pop("obstaclesFile", None)  # esta corrida fija sus propios obstaculos inline (mesa vacia)
-    cfg.pop("initialPositionsFile", None)  # esta corrida usa colocacion aleatoria por defecto
+    cfg.pop("obstaclesFile", None)
+    cfg.pop("initialPositionsFile", None)
     cfg["simulation"]["maxTime"] = MAX_TIME
     cfg["simulation"]["seed"] = seed
     cfg["particles"]["count"] = n

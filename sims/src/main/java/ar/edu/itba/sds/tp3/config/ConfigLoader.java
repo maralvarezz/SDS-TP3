@@ -19,21 +19,12 @@ public final class ConfigLoader {
                 .disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
                 .disable(MapperFeature.ALLOW_COERCION_OF_SCALARS)
                 .build();
-        // Los campos obligatorios se validan antes del mapeo: seed es el unico opcional.
         var tree = mapper.readTree(path.toFile());
         if (tree == null || !tree.isObject()) throw new IOException("La configuración debe ser un objeto JSON");
         var root = (ObjectNode) tree;
 
-        // initialPositionsFile lo consume por separado InitialPositionsLoader
-        // (usado desde Main junto a InitialStateGenerator); aca solo se
-        // descarta del arbol para que no llegue como campo desconocido al mapeo.
         root.remove("initialPositionsFile");
 
-        // obstaclesFile es un atajo opcional: apunta a un archivo de texto con el
-        // formato de entrega de la competencia ("xk yk Rk" por linea), para que ese
-        // mismo archivo sea a la vez el origen de los obstaculos y el artefacto a
-        // entregar, sin duplicar la configuracion en dos lugares. Se resuelve y se
-        // descarta del arbol antes de mapear, para no dejar un campo desconocido.
         var obstaclesFileNode = root.remove("obstaclesFile");
         String obstaclesFile = (obstaclesFileNode != null && !obstaclesFileNode.isNull())
                 ? obstaclesFileNode.asText() : null;

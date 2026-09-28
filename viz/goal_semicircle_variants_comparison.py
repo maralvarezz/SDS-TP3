@@ -61,7 +61,7 @@ VARIANT_LABELS = {
     "semicircle_guides": "Semicirculo\n+ guias",
     "funnel_guides": "Embudo\n+ guias",
 }
-REALIZATIONS = 5  # minimo del enunciado para el punto 1.2
+REALIZATIONS = 5
 BASE_SEED = 20265100
 RETRIES = 5
 

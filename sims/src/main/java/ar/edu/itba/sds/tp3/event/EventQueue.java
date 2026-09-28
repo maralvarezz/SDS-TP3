@@ -17,7 +17,6 @@ public final class EventQueue {
         this.parameters = parameters;
         this.versions = new long[state.particles().size()];
         long n = versions.length;
-        // Eliminar periodicamente predicciones obsoletas sin recalcular las vigentes.
         cleanupThreshold = Math.max(64, 4 * (n * (n - 1) / 2 + n * (state.obstacles().size() + 4L) + 1));
         events.add(new Event(parameters.maxTime(), EventType.SIMULATION_END, -1, -1, -1, null, -1, -1));
         for (int a = 0; a < versions.length; a++) {
@@ -39,7 +38,6 @@ public final class EventQueue {
         versions[a]++;
         if (b >= 0) versions[b]++;
         scheduleParticle(state, a, -1);
-        // La pareja a-b ya fue recalculada al procesar a.
         if (b >= 0) scheduleParticle(state, b, a);
         if (events.size() > cleanupThreshold) events.removeIf(event -> !event.isValid(versions));
     }

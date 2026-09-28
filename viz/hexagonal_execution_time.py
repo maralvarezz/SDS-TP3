@@ -36,8 +36,6 @@ CONFIG_PATH = ROOT / "input" / "config.json"
 JAR = ROOT / "sims" / "target" / "sds_tp3_g8.jar"
 OUTPUT = ROOT / "output"
 
-# Mismos parametros fisicos que execution_time.py (mesa vacia, K=0, tf=30s,
-# >=10 realizaciones por N), tomados de input/config.json.
 N_VALUES = [25, 50, 100, 200, 300, 400, 500, 600]
 REALIZATIONS = 10
 MAX_TIME = 30.0

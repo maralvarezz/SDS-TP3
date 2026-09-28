@@ -19,7 +19,6 @@ public final class CollisionTimeCalculator {
         }
         if (gap < -EPSILON) throw new IllegalStateException("Particula " + particle.id() + " fuera de la mesa");
         if (speed <= 0) return Double.POSITIVE_INFINITY;
-        // Un contacto redondeado apenas fuera del dominio se resuelve ahora, sin mover la pared.
         return Math.max(0, gap) / speed;
     }
 
@@ -39,15 +38,12 @@ public final class CollisionTimeCalculator {
         if (distance < sigma - EPSILON) throw new IllegalStateException("Solapamiento durante la simulacion");
         double approach = dx * vx + dy * vy;
         if (approach >= 0) return Double.POSITIVE_INFINITY;
-        // Contacto inmediato solo si los cuerpos se aproximan: permite resolver esquinas y empates.
         if (distance <= sigma) return 0;
         double speedSquared = vx * vx + vy * vy;
         if (speedSquared == 0) return Double.POSITIVE_INFINITY;
         double separation = (distance - sigma) * (distance + sigma);
         double discriminant = approach * approach - speedSquared * separation;
-        // Una tangencia exacta no intercambia impulso. Un discriminante negativo no es choque.
         if (discriminant <= 0) return Double.POSITIVE_INFINITY;
-        // Raiz menor de Teorica 3, diap. 14, racionalizada para evitar cancelacion cerca del contacto.
         return separation / (-approach + Math.sqrt(discriminant));
     }
 }

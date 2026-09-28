@@ -29,7 +29,6 @@ public final class CollisionResolver {
                 double nx = dx / distance, ny = dy / distance;
                 double relativeNormalSpeed = (b.velocity().x() - velocity.x()) * nx
                         + (b.velocity().y() - velocity.y()) * ny;
-                // Impulso elastico de Teorica 3, diap. 20, usando la normal unitaria de contacto.
                 double impulse = 2 * a.mass() * b.mass() * relativeNormalSpeed / (a.mass() + b.mass());
                 velocity = new Vector2D(velocity.x() + impulse * nx / a.mass(),
                         velocity.y() + impulse * ny / a.mass());
