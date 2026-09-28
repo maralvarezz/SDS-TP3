@@ -1,6 +1,7 @@
 import argparse
 import csv
 import json
+import secrets
 import subprocess
 import sys
 import tempfile
@@ -9,11 +10,15 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "viz"))
+from filler_layout import goal_semicircle_layout
+from obstacle_layouts import validate_layout
+
 COMPETITION_CONFIG_PATH = ROOT / "input" / "competition_config.json"
-OBSTACLES_PATH = ROOT / "input" / "obstacles.txt"
 JAR_PATH = ROOT / "sims" / "target" / "sds_tp3_g8.jar"
 JAVA_TIMEOUT_SECONDS = 25
 POLL_SECONDS = 0.05
+COMPETITION_FREE_RADIUS = 0.30
 
 COMPETITION_SIMULATION = {
     "length": 1.20,
@@ -52,17 +57,28 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="Ejecuta la simulacion de competencia usando solo la seed indicada.",
     )
-    parser.add_argument("seed", type=integer, help="Semilla entera para el randomizer")
+    parser.add_argument("seed", nargs="?", type=integer,
+                        help="Semilla entera para el randomizer (aleatoria si se omite)")
     return parser.parse_args()
 
 
 def build_competition_config(seed):
+    obstacles = goal_semicircle_layout(
+        COMPETITION_FREE_RADIUS,
+        COMPETITION_SIMULATION["length"],
+        COMPETITION_SIMULATION["width"],
+    )
+    validate_layout(
+        obstacles,
+        COMPETITION_SIMULATION["length"],
+        COMPETITION_SIMULATION["width"],
+        COMPETITION_PARTICLES["radius"],
+    )
     return {
         "simulation": {**COMPETITION_SIMULATION, "seed": seed},
         "particles": COMPETITION_PARTICLES,
         "output": COMPETITION_OUTPUT,
-        "obstaclesFile": "obstacles.txt",
-        "obstacles": [],
+        "obstacles": obstacles,
     }
 
 
@@ -71,8 +87,6 @@ def validate_inputs():
         raise FileNotFoundError(
             f"No se encontro el jar compilado: {JAR_PATH}. Ejecutar 'mvn clean package' primero."
         )
-    if not OBSTACLES_PATH.is_file():
-        raise FileNotFoundError(f"No se encontro la distribucion de competencia: {OBSTACLES_PATH}")
 
 
 def one_file(directory, pattern):
@@ -179,10 +193,11 @@ def run_competition(seed, show_progress=False):
 
 def main():
     args = parse_args()
+    seed = args.seed if args.seed is not None else to_java_long(secrets.randbits(64))
     try:
         print("----- competencia -----", flush=True)
-        print(f"seed: {to_java_long(args.seed)}", flush=True)
-        print_run_result(run_competition(args.seed, show_progress=True), include_header=False)
+        print(f"seed: {to_java_long(seed)}", flush=True)
+        print_run_result(run_competition(seed, show_progress=True), include_header=False)
     except (OSError, RuntimeError) as error:
         print(f"Error: {error}", file=sys.stderr)
         return 1
