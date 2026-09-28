@@ -72,8 +72,10 @@ corrida se dispara reescribiendo la unica fuente de verdad, input/config.json,
 y ejecutando el jar sin argumentos. El config original se restaura al final.
 """
 import csv
+import argparse
 import json
 import re
+import secrets
 import subprocess
 from datetime import datetime, timezone
 from itertools import groupby
@@ -220,17 +222,19 @@ def diffusion_coefficient(times, msd):
     return d, slope, 0.0, (times[mask][0], times[mask][-1])
 
 
-def run_config(base, label, obstacles, config_index):
-    """Corre REALIZATIONS realizaciones por configuracion. La realizacion 0
-    (misma seed que antes: BASE_SEED + config_index) es la unica que se usa
-    para la curva DCM(t) y el ajuste lineal -- eso sigue siendo una unica
-    realizacion sin promediar, como pide el enunciado para el punto 1.3. Las
-    realizaciones restantes solo sirven para tener desvio estandar de D y
-    t90 en el grafico de correlacion (plot_correlation)."""
+def run_config(base, label, obstacles, config_index, random_seeds=False):
+    """Corre REALIZATIONS realizaciones con semillas fijas o nuevas.
+
+    La primera alimenta la curva DCM(t) de una sola corrida. Las restantes
+    aportan el desvio de D y t90 al grafico de correlacion.
+    """
     ds, t90s = [], []
     curve = None
     for i in range(REALIZATIONS):
-        seed = BASE_SEED + config_index if i == 0 else BASE_SEED + config_index * 1000 + i
+        if random_seeds:
+            seed = secrets.randbits(63)
+        else:
+            seed = BASE_SEED + config_index if i == 0 else BASE_SEED + config_index * 1000 + i
         directory, metadata = run_once(base, obstacles, seed)
         times, msd = msd_curve(directory)
         if times[-1] < MAX_TIME:
@@ -331,6 +335,10 @@ def plot_correlation(results):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Grafica DCM y D vs t90")
+    parser.add_argument("--random-seeds", action="store_true",
+                        help="Genera semillas nuevas para cada realizacion en cada ejecucion")
+    args = parser.parse_args()
     if not JAR.exists():
         raise FileNotFoundError(f"No se encontro el jar compilado: {JAR}. Ejecutar 'mvn -q clean package' primero")
     base = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
@@ -345,7 +353,7 @@ def main():
             obstacles = BUILDERS[label](length, width, goal)
             validate_layout(obstacles, length, width, particle_radius)
             print(f"{label}: obstaculos={obstacles}")
-            results[label] = run_config(base, label, obstacles, c)
+            results[label] = run_config(base, label, obstacles, c, random_seeds=args.random_seeds)
             r = results[label]
             print(f"  DCM(t)/ajuste (1 realizacion): D={fmt2sf(r['d'])} m^2/s "
                   f"(ventana {r['window'][0]:.1f}-{r['window'][1]:.1f} s), t90={r['t90']:.3f} s")
