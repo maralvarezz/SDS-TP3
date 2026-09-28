@@ -1,22 +1,3 @@
-"""Dibuja la mesa (sin particulas) para una configuracion dada, con el mismo
-esquema que la figura del enunciado: rectangulo L x W, arcos punteados de
-ancho d centrados en las paredes cortas (x=0 y x=L), cotas L, W y d,
-etiquetas "arco" y obstaculos circulares grises con su radio R_k.
-
-La configuracion se pasa como dict con el mismo esquema que
-input/config.json (simulation.length/width/goalSize y obstacles), o como
-ruta a un JSON con ese esquema:
-
-    draw_table(config)          -> (fig, ax), para componer o guardar a mano
-    draw_config(ruta_json)      -> guarda un PNG y devuelve su ruta
-
-Si el JSON usa "obstaclesFile" (archivo "x y R" por linea, ver ConfigLoader),
-load_config lo resuelve relativo al directorio del JSON, igual que Java.
-
-Sin argumentos por linea de comando (los parametros se pasan por archivo de
-configuracion): ejecutar el script dibuja CONFIG_PATH y guarda el PNG en
-output/table_plots/.
-"""
 import json
 from datetime import datetime, timezone
 from pathlib import Path

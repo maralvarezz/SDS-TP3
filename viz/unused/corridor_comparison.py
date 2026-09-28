@@ -1,26 +1,3 @@
-"""Punto 1.2: configuracion "pasillo". Dos filas de circulos iguales (radio rho)
-pegados a las paredes largas, una arriba y otra abajo, a lo largo de toda la
-mesa, que dejan un unico pasillo libre en el medio que une los dos arcos.
-
-Geometria: cada fila tiene n circulos con centros en y = rho*MARGIN (abajo) e
-y = W - rho*MARGIN (arriba), repartidos parejo entre x = rho*MARGIN y
-x = L - rho*MARGIN, con separacion >= 2*rho*MARGIN (casi tangentes, sin
-solaparse). El pasillo libre mide W - 4*rho*MARGIN. Para no tapar los arcos
-(d=0.20 m centrado en W/2) el borde interno de las filas no debe pasar de
-y = W/2 - d/2, o sea rho <= (W - d) / 4 = 0.12 m.
-
-Restricciones verificadas para cada rho antes de correr: (i) obstaculos
-dentro del dominio y sin solaparse, (ii) rho >= r_particula (ver
-obstacle_layouts.validate_layout), y que se puedan generar las N particulas.
-
-N=100, maxTime=100s. La corrida, reintentos y estadisticas se reutilizan de
-goal_bumpers_comparison.py (mismos parametros N y tmax que el resto del 1.2).
-
-Java no conoce este experimento ni recibe argumentos por linea de comando:
-cada corrida se dispara reescribiendo la unica fuente de verdad,
-input/config.json, y ejecutando el jar sin argumentos. El config original se
-restaura al final.
-"""
 import json
 from datetime import datetime, timezone
 

@@ -1,10 +1,3 @@
-"""Dibuja la mesa de cada configuracion estudiada en el punto 1.2 (las mismas
-etiquetas de diffusion.BUILDERS y del grafico conjunto de Fu(t)) y la
-configuracion de competencia vigente en input/config.json.
-
-Los obstaculos se toman de diffusion.BUILDERS, sin duplicar definiciones. Sin
-argumentos por linea de comando: los PNG se guardan en output/table_plots/.
-"""
 import re
 from datetime import datetime, timezone
 

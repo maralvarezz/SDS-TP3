@@ -1,34 +1,3 @@
-"""Punto 1.2: familia "competencia", segunda ronda. Sigue a
-goal_semicircle_comparison.py (barrido de radio, minimo en free_radius=0.30,
-<t90>=13.16 s, meseta ancha entre 0.28 y 0.32) y a
-goal_semicircle_variants_comparison.py (embudo y guias, ambos peores que el
-semicirculo simple -- angostar la boca hacia el arco crea un cuello de
-botella, y agregar obstaculos guia adentro de la cavidad solo suma choques
-sin sesgar la trayectoria hacia el gol).
-
-Dos experimentos en esta ronda:
-
-1. Barrido mas fino del semicirculo alrededor del optimo previo
-   (R=0.29, 0.30, 0.31), para separar mejor las barras de error que se
-   superponian entre 0.28/0.30/0.32.
-2. Variante "elipse": el semicirculo esta acotado por el ancho de la mesa
-   (no puede crecer mas de free_radius~0.32 sin tocar las paredes
-   horizontales), pero la mesa es bastante mas larga que ancha
-   (L=1.20 vs W=0.68). En vez de angostar la boca hacia el arco (eso ya
-   fallo, ver embudo), se estira la cavidad en profundidad manteniendo el
-   mismo ancho en la boca (semieje menor b=0.32, igual que el semicirculo,
-   sin cuello de botella) y un semieje mayor a > b en la direccion
-   longitudinal, dando mas area sin repetir el error del embudo. Se prueban
-   a=0.40, 0.45 y 0.50 (ver filler_layout.goal_ellipse_layout).
-
-N=100, maxTime=100s, 5 realizaciones por configuracion (el minimo del
-enunciado, para no alargar demasiado el tiempo de corrida).
-
-Java no conoce este experimento ni recibe argumentos por linea de comando:
-cada corrida se dispara reescribiendo la unica fuente de verdad,
-input/config.json, y ejecutando el jar sin argumentos. El config original se
-restaura al final.
-"""
 import json
 import subprocess
 from datetime import datetime, timezone
@@ -115,8 +84,6 @@ def t90_stats(metadatas, label):
 
 
 def configs():
-    """Lista ordenada de (label, kind, param) a correr, en un solo eje x
-    categorico para el grafico final."""
     items = []
     for r in REFINED_RADII:
         items.append((f"R={r}", "semicircle", r))

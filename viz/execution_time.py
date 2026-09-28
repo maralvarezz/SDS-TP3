@@ -1,9 +1,3 @@
-"""Punto 1.1: orquesta corridas de mesa vacia variando N y grafica tiempo de ejecucion.
-
-Java no conoce este experimento ni recibe argumentos por linea de comando: cada
-corrida se dispara reescribiendo la unica fuente de verdad, input/config.json,
-y ejecutando el jar sin argumentos. El config original se restaura al final.
-"""
 import json
 import subprocess
 from datetime import datetime, timezone

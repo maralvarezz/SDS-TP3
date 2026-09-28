@@ -1,22 +1,3 @@
-"""Punto 1.1: compara en un unico grafico el tiempo de ejecucion vs N entre
-las dos estrategias de colocacion inicial ya implementadas por separado:
-
-- colocacion aleatoria por rechazo secuencial (RSA), en execution_time.py;
-- empaquetado hexagonal, en hexagonal_execution_time.py.
-
-Este script no duplica logica de corrida: reutiliza tal cual las funciones
-`realize()` de esos dos modulos (mismos N, REALIZATIONS, seeds y
-reintentos que cada uno ya tenia) y unicamente las orquesta una detras de
-la otra y las grafica juntas, para poder comparar en el mismo eje hasta
-donde llega cada metodo de colocacion (ver docstring de
-hexagonal_execution_time.py: la hipotesis es que el empaquetado hexagonal
-llega a N mas altos que la colocacion aleatoria).
-
-Java no conoce este experimento ni recibe argumentos por linea de comando:
-cada corrida se dispara reescribiendo la unica fuente de verdad,
-input/config.json, y ejecutando el jar sin argumentos. El config original se
-restaura al final.
-"""
 import json
 from datetime import datetime, timezone
 from pathlib import Path

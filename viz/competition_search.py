@@ -1,16 +1,3 @@
-"""Punto 1.4 (competencia): busca el mejor radio para un obstaculo unico
-centrado (x=L/2, y=W/2), extendiendo la exploracion sistematica del punto 1.2
-(configuration_comparison.py encontro que x=L/2 es la mejor posicion para
-R=0.15; este script barre R con esa posicion fija).
-
-Usa los parametros fijos de la competencia: N=100, v0=1 m/s, r=0.0175 m,
-m=0.025 kg, L=1.20 m, W=0.68 m, d=0.20 m, tmax=100 s.
-
-Java no conoce este experimento ni recibe argumentos por linea de comando:
-cada corrida se dispara reescribiendo la unica fuente de verdad,
-input/config.json, y ejecutando el jar sin argumentos. El config original se
-restaura al final.
-"""
 import json
 import subprocess
 from datetime import datetime, timezone

@@ -1,27 +1,3 @@
-"""Punto 1.2: variante asimetrica del embudo de flanking_circles_comparison.py.
-
-Toma la misma estructura (circulo grande R_big + 2 circulos iguales r_small,
-tangentes a el, centrados en y=W/2) pero desplaza todo el conjunto sobre el
-eje x, acercandolo al arco de x=0 en vez de mantenerlo centrado. El objetivo
-es ver si romper la simetria (favorecer un arco sobre el otro) ayuda o
-perjudica <t90> cuando la estructura es la del "canal angosto" (R_big grande)
-en vez del obstaculo chico usado en configuration_comparison.py (R=0.15),
-donde ya se vio que alejarse del centro empeora.
-
-Restriccion (i): con R_big=0.335 y r_small=0.02 (mejores valores encontrados
-en radius_comparison.py y flanking_circles_comparison.py), el circulo chico
-cercano al arco desplazado queda en x_big - (R_big+r_small)*margen; la
-contencion (Rk<=xk) fija el desplazamiento maximo desde el centro en
-~0.2246 m (calculado antes de correr el experimento). El barrido no supera
-ese limite.
-
-N=100, maxTime=100s (mismos parametros que el resto de los scripts de 1.2).
-
-Java no conoce este experimento ni recibe argumentos por linea de comando:
-cada corrida se dispara reescribiendo la unica fuente de verdad,
-input/config.json, y ejecutando el jar sin argumentos. El config original se
-restaura al final.
-"""
 import json
 import subprocess
 from datetime import datetime, timezone

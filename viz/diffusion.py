@@ -1,76 +1,3 @@
-"""Punto 1.3: desplazamiento cuadratico medio (DCM) y coeficiente de difusion (D).
-
-Enunciado (verificado via Projects.project_search sobre el PDF): "Calcular el
-desplazamiento cuadratico medio (DCM) promediando sobre todas las particulas
-moviles del sistema (frescas y usadas) PARA UNA REALIZACION. Luego ajustar
-linealmente siguiendo las indicaciones del metodo mostrado en la clase
-Teorica 0 para obtener el coeficiente de difusion (D). Reportar D para la
-mesa vacia y para las otras configuraciones estudiadas, y verificar si
-existe o no alguna correlacion entre D y t90."
-
-Correccion de la catedra (devolucion sobre una entrega previa): el punto 1.3
-debe presentarse con UNA sola realizacion por configuracion (nada de
-promediar el DCM sobre varias corridas, a diferencia del punto 1.2) y con
-TODAS las configuraciones en un unico grafico de DCM(t) en vez de un PNG
-separado por configuracion. Este script fue corregido para reflejar eso: ya
-no promedia entre realizaciones (antes se corrian REALIZATIONS=10 seeds por
-config y se promediaba el DCM sobre una grilla temporal comun), y el DCM se
-promedia unicamente sobre las N particulas de esa unica corrida, como pide
-el enunciado. t90 tambien pasa a ser el valor de esa misma corrida (sin
-promedio ni barra de error entre realizaciones, que solo tiene sentido en
-1.2/1.4 donde el enunciado si pide "al menos 5 realizaciones").
-
-Excepcion puntual al parrafo anterior: el grafico de CORRELACION D vs t90
-(plot_correlation) es otro grafico distinto de la curva DCM(t), y la
-correccion de catedra hablaba especificamente de esa curva. Para poder
-mostrar barra de error en ambos ejes de la correlacion, run_config corre
-REALIZATIONS=5 realizaciones por configuracion y promedia D y t90 entre
-ellas -- pero la realizacion 0 de ese barrido (misma seed que antes,
-BASE_SEED + config_index) sigue siendo la unica que alimenta plot_msd_all,
-asi que la curva DCM(t)/ajuste en si no cambia: sigue siendo una unica
-realizacion sin promediar.
-
-Configuraciones estudiadas: mesa vacia + UN representante final por cada una
-de las 3 familias del punto 1.2 (no uno por cada eje explorado dentro de una
-familia): R=0.339 (familia A: obstaculo unico, posicion x=L/2 y radio ya
-optimizados juntos), embudo_gap=0.45 (familia B: circulo grande + 2 chicos,
-radio 0.02 y separacion 0.45 ya optimizados juntos) y competencia_R=0.3
-(familia C: relleno + semicirculos libres frente a los arcos, radio libre ya
-optimizado). Mismas etiquetas y colores que el grafico conjunto de Fu(t) (ver
-fu_curves.CONFIG_COLORS). Sus obstaculos se toman de los propios scripts/
-modulos de 1.2 para no duplicar las definiciones.
-
-Metodologia del ajuste, segun docs/Teorica_0.pdf (slide 38, "Difusion: Random
-Walk"):
-
-- El sistema es 2D, por lo que la convencion de la catedra es <z^2> = 4 D t.
-- Ajuste sobre el tramo de crecimiento SIN ordenada al origen: el modelo de
-  Teorica_0 es <z^2> = 4 D t, sin termino independiente (en t=0 el
-  desplazamiento es 0 por construccion), asi que se ajusta y = m*t (un solo
-  parametro) y D = m / 4.
-
-La mesa (L=1.20 x W=0.68 m) es chica: el DCM satura por confinamiento en
-pocos segundos, muy antes de cualquier fraccion fija del tiempo total. Teorica_0
-no especifica una ventana de ajuste, asi que se la define en funcion del valor
-del DCM: entre FIT_LOW y FIT_HIGH fracciones del valor de saturacion (media del
-DCM sobre el ultimo PLATEAU_TAIL_FRACTION del tiempo simulado), evitando la zona
-ya saturada.
-
-FIT_LOW_FRACTION=0 (no recorta el arranque) y FIT_HIGH_FRACTION=0.50 se
-eligieron comparando el R^2 del ajuste sobre los datos reales de una corrida
-para varias ventanas candidatas (0.15-0.65, 0.20-0.50, 0.15-0.50, 0-0.50).
-Contra la hipotesis inicial de que habia que recortar el arranque balistico
-(<z^2> ~ t^2 para t chico) para no sesgar la pendiente, sacar ese corte dio
-SIEMPRE mejor R^2 en las 4 configuraciones de 1.3 (ej. competencia_R=0.3:
-R^2=0.24 con 0.15-0.65 vs R^2=0.98 con 0-0.50): como el ajuste ya se fuerza
-por el origen (ver diffusion_coefficient) y el DCM real tambien arranca
-exactamente en (0,0) por construccion, incluir esos primeros puntos ancla
-mejor la recta en vez de sesgarla.
-
-Java no conoce este experimento ni recibe argumentos por linea de comando: cada
-corrida se dispara reescribiendo la unica fuente de verdad, input/config.json,
-y ejecutando el jar sin argumentos. El config original se restaura al final.
-"""
 import csv
 import argparse
 import json
@@ -100,9 +27,6 @@ OUTPUT = ROOT / "output"
 
 
 def fmt2sf(x):
-    """Formatea un numero a 2 cifras significativas (D se reporta asi, no con
-    una cantidad fija de decimales -- con valores que van de ~0.003 a ~0.019
-    m^2/s, .6f mostraba 4-5 cifras significativas de mas)."""
     return f"{x:.2g}"
 
 
@@ -166,9 +90,6 @@ def run_once(base, obstacles, seed):
 
 
 def msd_curve(directory):
-    """DCM(t) de UNA corrida: promedio sobre las N particulas (frescas y
-    usadas) de esa unica realizacion, como pide el enunciado -- no hay
-    promedio entre realizaciones aca."""
     states_files = list(directory.glob("states_*.csv"))
     if len(states_files) != 1:
         raise ValueError(f"Se esperaba un unico states_*.csv en {directory}")
@@ -191,10 +112,6 @@ def msd_curve(directory):
 
 
 def diffusion_coefficient(times, msd):
-    """Ajusta <z^2> = 4 D t (Teorica_0, slide 38) sin ordenada al origen: el
-    modelo no tiene termino independiente, ya que en t=0 el desplazamiento es
-    0 por construccion. Minimos cuadrados con y = m*t (un unico parametro):
-    m = sum(t*z2) / sum(t^2)."""
     tail = times >= (1 - PLATEAU_TAIL_FRACTION) * times[-1]
     plateau = msd[tail].mean()
     lo_value, hi_value = FIT_LOW_FRACTION * plateau, FIT_HIGH_FRACTION * plateau
@@ -208,11 +125,6 @@ def diffusion_coefficient(times, msd):
 
 
 def run_config(base, label, obstacles, config_index, random_seeds=False):
-    """Corre REALIZATIONS realizaciones con semillas fijas o nuevas.
-
-    La primera alimenta la curva DCM(t) de una sola corrida. Las restantes
-    aportan el desvio de D y t90 al grafico de correlacion.
-    """
     ds, t90s = [], []
     curve = None
     for i in range(REALIZATIONS):
@@ -246,10 +158,6 @@ def slug(label):
 
 
 def plot_msd_all(results):
-    """Un unico grafico de DCM(t) con todas las configuraciones (mesa vacia
-    incluida), cada una con su recta de ajuste punteada del mismo color --
-    reemplaza los PNG individuales por configuracion que se generaban antes,
-    por pedido explicito de la correccion de la catedra."""
     fig, ax = plt.subplots(figsize=(8.5, 5.4))
     for label in CONFIGS:
         r = results[label]

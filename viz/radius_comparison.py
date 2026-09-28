@@ -1,27 +1,3 @@
-"""Punto 1.2: continua la exploracion de configuration_comparison.py.
-
-Esa corrida barrio la posicion x de un unico obstaculo (K=1) con R=0.15 fijo,
-y encontro que x=L/2=0.60 m (centrado) minimiza <t90>. Este script fija esa
-posicion (x=L/2, y=W/2) y barre el radio R, para ver si el resultado mejora
-mas variando el tamano del obstaculo.
-
-Restriccion (ii) del enunciado: Rk >= r y tal que permita la generacion de
-las N particulas. r=0.0175 m (input/config.json). Se verifica ademas, para
-cada R candidato, la restriccion (i) de contencion: con el obstaculo
-centrado en y=W/2, la cota "Rk <= yk <= W - Rk" exige R <= W/2 = 0.34 m; por
-eso el barrido no llega a ese valor (se detiene en R=0.335, ya verificado
-empiricamente que sigue permitiendo generar las 100 particulas).
-
-N=100, maxTime=100s (mismos parametros que configuration_comparison.py, ver
-ese script para la justificacion de tmax). La mesa vacia se recalcula en esta
-misma corrida (no se reutiliza el valor de otro script) para que la
-comparacion sea internamente consistente.
-
-Java no conoce este experimento ni recibe argumentos por linea de comando:
-cada corrida se dispara reescribiendo la unica fuente de verdad,
-input/config.json, y ejecutando el jar sin argumentos. El config original se
-restaura al final.
-"""
 import json
 import subprocess
 from datetime import datetime, timezone

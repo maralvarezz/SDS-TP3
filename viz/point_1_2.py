@@ -1,4 +1,3 @@
-"""Grafico de fraccion usada y t90 de una corrida Java completada."""
 from datetime import datetime, timezone
 
 from common import latest_run, one_file, rows

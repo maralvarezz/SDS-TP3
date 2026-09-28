@@ -1,13 +1,3 @@
-"""Ejecuta una corrida de competencia con configuracion fija.
-
-Uso:
-    python competition/run_competition.py <seed>
-
-La unica variacion admitida por este wrapper es la semilla. Puede recibirse
-cualquier entero; si no entra en el rango long de Java se normaliza de forma
-deterministica. Los parametros de competencia y la distribucion de obstaculos
-salen de input/competition_config.json e input/obstacles.txt.
-"""
 import argparse
 import csv
 import json
@@ -128,7 +118,6 @@ def print_run_result(result, include_header=True):
 
 
 def print_new_conversions(directory, printed, particle_count):
-    """Leer solo filas completas; una escritura parcial se retoma en el proximo poll."""
     files = list(directory.glob("goals_*.csv"))
     if not files:
         return printed
@@ -143,11 +132,6 @@ def print_new_conversions(directory, printed, particle_count):
 
 
 def run_competition(seed, show_progress=False):
-    """Ejecuta una corrida y devuelve los datos que imprime la CLI.
-
-    Retorna:
-        dict con "seed" (seed efectiva Java long) y "t90" (float o None).
-    """
     validate_inputs()
     java_seed = to_java_long(seed)
     competition_config = build_competition_config(java_seed)

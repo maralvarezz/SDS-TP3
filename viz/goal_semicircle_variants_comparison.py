@@ -1,37 +1,3 @@
-"""Punto 1.2: familia "competencia", variantes de la geometria de la zona
-libre. Sigue a goal_semicircle_comparison.py (que barrio el radio del
-semicirculo libre y encontro un minimo en free_radius=0.30 m,
-<t90>=13.16 s, bastante por debajo de mesa vacia pero con una meseta ancha
-entre 0.28 y 0.32).
-
-Hipotesis de por que un free_radius mas chico daba peor <t90> en vez de
-mejor: con menos area, las 100 particulas quedan mas apretadas y las
-colisiones particula-particula las traban entre si antes de que lleguen a
-la pared (el "narrow escape problem" clasico predice lo contrario -- cavidad
-mas chica con salida fija deberia drenar mas rapido -- asi que el
-apinamiento parece dominar sobre la ventaja de apuntado). Estas variantes
-atacan el "apuntado" sin volver a reducir el area (ver filler_layout.py):
-
-- "semicircle": el mejor caso ya medido (free_radius=0.30), como base de
-  comparacion.
-- "funnel": la zona libre es un embudo que calza exactamente con el ancho
-  del arco en la pared (elimina la "pared muerta" del semicirculo) y tiene
-  MAS area total que el semicirculo (0.36 m^2 vs 0.2827 m^2), para no volver
-  a apianar.
-- "semicircle_guides": semicirculo R=0.30 + 2 obstaculos guia por arco justo
-  afuera de sus bordes (misma idea que el "paragolpes" descartado de la
-  familia B), para desviar particulas hacia el arco.
-- "funnel_guides": combina las dos ideas anteriores.
-
-N=100, maxTime=100s, 5 realizaciones por configuracion (el minimo del
-enunciado, para no alargar demasiado el tiempo de corrida, para comparar en igualdad de condiciones -- ver
-goal_semicircle_comparison.py).
-
-Java no conoce este experimento ni recibe argumentos por linea de comando:
-cada corrida se dispara reescribiendo la unica fuente de verdad,
-input/config.json, y ejecutando el jar sin argumentos. El config original se
-restaura al final.
-"""
 import json
 import subprocess
 from datetime import datetime, timezone

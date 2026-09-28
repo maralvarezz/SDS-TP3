@@ -1,8 +1,3 @@
-"""Explora un rango consecutivo de seeds y muestra las 5 mejores.
-
-Uso:
-    python competition/explorer.py <seed_inicial> <cantidad>
-"""
 import argparse
 import sys
 

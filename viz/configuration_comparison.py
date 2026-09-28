@@ -1,22 +1,3 @@
-"""Punto 1.2: explora el espacio de configuraciones de obstaculos y compara <t90>.
-
-Metodologia elegida (una de las sugeridas en el enunciado): un unico obstaculo
-grande (K=1) que se desplaza sobre el eje longitudinal (x), centrado en y=W/2.
-Se reporta <t90> con barra de error (desvio estandar) vs la posicion x del
-obstaculo, y se compara contra la mesa vacia (K=0), que es solo una referencia
-y no una de las configuraciones exploradas (esas deben cumplir K>0 segun la
-restriccion (i) del enunciado).
-
-N=100 (fijo, segun el enunciado para el punto 1.2 en adelante). maxTime=100s,
-igual que los parametros fijos de la competencia (el enunciado no fija un tf
-propio para 1.2; se usa el mismo tmax que en el resto de los puntos posteriores
-para poder alcanzar Fu>=0.9 de forma consistente).
-
-Java no conoce este experimento ni recibe argumentos por linea de comando:
-cada corrida se dispara reescribiendo la unica fuente de verdad,
-input/config.json, y ejecutando el jar sin argumentos. El config original se
-restaura al final.
-"""
 import json
 import subprocess
 from datetime import datetime, timezone

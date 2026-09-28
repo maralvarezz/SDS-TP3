@@ -1,9 +1,3 @@
-"""Disposiciones de obstaculos compartidas entre experimentos del punto 1.2 y 1.3.
-
-Metodologia "n obstaculos de area total fija con n creciente": K obstaculos que
-conservan la misma area total que un unico circulo de radio TOTAL_AREA_RADIUS,
-ubicados simetricamente sobre el eje longitudinal, centrados en y=W/2.
-"""
 import math
 
 TOTAL_AREA_RADIUS = 0.15

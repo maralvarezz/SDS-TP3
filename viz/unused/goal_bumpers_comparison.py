@@ -1,29 +1,3 @@
-"""Punto 1.2: "paragolpes" de arco. Idea nueva, no probada todavia: en vez de
-poner los circulos chicos sobre la linea media (que si crecen tapan el
-arco, ver flanking_circles_comparison.py), se colocan 4 circulos chicos
-(radio r_end, iguales entre si) justo por fuera de los bordes superior e
-inferior de cada arco, cerca de cada pared corta. La idea es imitar los
-paragolpes de una mesa de metegol real: desvian la trayectoria hacia adentro
-del arco en vez de bloquearlo, porque quedan fuera del ancho del arco
-(d=0.20 m centrado en W/2), no delante de el.
-
-Geometria (con el circulo grande centrado, R_big=0.335, ya establecido como
-buena base): para cada arco, a una distancia x_e de la pared corta, un
-circulo con centro en y = (W/2 - d/2) - r_end (por debajo del arco) y otro
-en y = (W/2 + d/2) + r_end (por encima), ambos tangentes al borde del arco
-desde afuera.
-
-Restricciones verificadas para cada r_end antes de correr: (i) contencion
-(r_end <= x_e, r_end <= y <= W-r_end) y no solapamiento con el circulo
-grande ni entre si; (ii) r_end >= r_particula.
-
-N=100, maxTime=100s (mismos parametros que el resto de los scripts de 1.2).
-
-Java no conoce este experimento ni recibe argumentos por linea de comando:
-cada corrida se dispara reescribiendo la unica fuente de verdad,
-input/config.json, y ejecutando el jar sin argumentos. El config original se
-restaura al final.
-"""
 import json
 import subprocess
 from datetime import datetime, timezone

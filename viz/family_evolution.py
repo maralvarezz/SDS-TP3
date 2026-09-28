@@ -1,15 +1,3 @@
-"""Punto 1.2: panel "evolucion temporal (Fu(t))" por familia, para el esquema
-de presentacion pedido por la catedra (animacion caracteristica + evolucion
-temporal de particulas convertidas + input vs observable <t90>, por
-familia, y comparacion final de los 3 mejores ejemplares).
-
-No corre Java: reusa las curvas Fu(t) que fu_curves.py ya tiene cacheadas
-(fu_curves.json) de cuando se corrieron radius_comparison.py,
-flanking_position_comparison.py y goal_semicircle_comparison.py. Cada panel
-muestra unicamente mesa vacia + el representante FINAL de esa familia (no
-todo el barrido -- eso ya se ve en el "input vs observable" de cada
-familia).
-"""
 from fu_curves import plot_curves
 
 FAMILIES = [

@@ -1,14 +1,3 @@
-"""Almacena y grafica curvas Fu(t) (fraccion usada vs tiempo) de corridas del
-punto 1.2, para poder compararlas mas adelante en un unico grafico con una
-curva por configuracion, en distintos colores.
-
-No es una fuente de verdad adicional: cada curva guardada se reconstruye
-directamente del goals_*.csv y metadata_*.json que ya escribe Java para esa
-corrida (misma logica que point_1_2.py). Este modulo solo cachea esa
-reconstruccion, indexada por una etiqueta de configuracion, en un JSON
-compartido para poder graficar varias configuraciones juntas sin tener que
-volver a correr todo.
-"""
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -58,8 +47,6 @@ def load_curves():
 
 
 def save_curve(label, run, metadata):
-    """Reconstruye la curva Fu(t) de esta corrida (requiere writeGoals=true)
-    y la guarda bajo `label` en el almacen compartido de curvas del punto 1.2."""
     times, fractions = _fu_curve(run, metadata)
     curves = load_curves()
     curves[label] = {

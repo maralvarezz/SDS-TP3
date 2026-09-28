@@ -1,20 +1,3 @@
-"""Punto 1.2: metodologia "n obstaculos de area total fija con n creciente".
-
-Compara <t90> para K=1, K=2 y K=3 obstaculos que en conjunto conservan la misma
-area total que el mejor obstaculo unico encontrado en configuration_comparison.py
-(R=0.15 m, centrado en x=L/2). Se ubican simetricamente sobre el eje longitudinal,
-centrados en y=W/2, respetando las restricciones del enunciado:
-
-i.  K obstaculos integramente dentro del dominio y sin solaparse entre si.
-ii. Rk >= r y tal que permita la generacion de las N particulas.
-
-La mesa vacia (K=0) es solo la referencia de comparacion, no una configuracion
-explorada (esas requieren K>0).
-
-Java no conoce este experimento ni recibe argumentos por linea de comando: cada
-corrida se dispara reescribiendo la unica fuente de verdad, input/config.json, y
-ejecutando el jar sin argumentos. El config original se restaura al final.
-"""
 import json
 import subprocess
 from datetime import datetime, timezone

@@ -1,23 +1,3 @@
-"""Punto 1.1 (variante exploratoria): igual que execution_time.py, pero
-colocando las N particulas en un empaquetado hexagonal (viz/hexagonal_packing.py)
-en vez de la colocacion aleatoria por rechazo secuencial. La hipotesis a
-verificar es que el empaquetado hexagonal permite alcanzar valores de N mas
-altos que la colocacion aleatoria (que, con este radio y dominio, empieza a
-fallar de forma poco confiable alrededor de N=435 y siempre falla desde
-N~460, por el "jamming" propio del muestreo aleatorio secuencial, muy por
-debajo del maximo geometrico real de ~737).
-
-Java solo recibe una lista de posiciones ya validas via
-initialPositionsFile (ver InitialPositionsLoader); sigue sin saber que
-existe un "empaquetado hexagonal", y sigue asignando la direccion de
-velocidad de cada particula de forma aleatoria y uniforme en [0, 2pi), como
-exige el enunciado para toda condicion inicial.
-
-Java no conoce este experimento ni recibe argumentos por linea de comando:
-cada corrida se dispara reescribiendo la unica fuente de verdad,
-input/config.json, y ejecutando el jar sin argumentos. El config original se
-restaura al final.
-"""
 import json
 import subprocess
 from datetime import datetime, timezone

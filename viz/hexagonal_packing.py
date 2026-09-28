@@ -1,22 +1,3 @@
-"""Genera centros de particulas en un empaquetado hexagonal (triangular) que
-cubre TODA la mesa, no solo una esquina densa: para un N dado se busca (por
-busqueda binaria) el espaciado mas chico posible entre vecinos que aun
-distribuye los N puntos en filas/columnas parejas a lo largo de todo el
-dominio, respetando el margen minimo 2*radius a las paredes y entre
-particulas. Al espaciado minimo absoluto (maxima densidad) se llega solo
-cuando N se acerca al maximo geometrico del dominio.
-
-Cada posicion se calcula por multiplicacion directa (indice * paso), no por
-suma repetida, para no acumular error de redondeo de punto flotante a lo
-largo de una fila larga -- eso llegaba a empujar particulas mas alla de la
-tolerancia numerica del motor (EPSILON) y Java rechazaba la corrida con
-"Particula fuera de la mesa".
-
-Es pura geometria (capa de orquestacion/exploracion), no fisica: Java sigue
-sin saber que existe un "empaquetado hexagonal"; solo recibe una lista de
-posiciones ya validas via initialPositionsFile y sigue asignando velocidades
-aleatorias como siempre.
-"""
 import math
 
 SAFETY_MARGIN = 1e-6
@@ -58,13 +39,10 @@ def _lattice(length, width, radius, spacing):
 
 
 def max_count(length, width, radius, margin_factor=1.001):
-    """Cantidad maxima de particulas que entran a densidad hexagonal maxima."""
     return _count_for_spacing(length, width, radius, 2 * radius * margin_factor)
 
 
 def hexagonal_positions(length, width, radius, n, margin_factor=1.001):
-    """Centros de n particulas distribuidos en una grilla hexagonal que cubre
-    todo el dominio. Lanza ValueError si n supera el maximo geometrico."""
     min_spacing = 2 * radius * margin_factor
     feasible_max = _count_for_spacing(length, width, radius, min_spacing)
     if n > feasible_max:

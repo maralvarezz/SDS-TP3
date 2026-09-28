@@ -1,27 +1,3 @@
-"""Punto 1.2: arreglo tipo "embudo hacia los arcos" (una de las metodologias
-sugeridas en el enunciado): un circulo grande centrado en la mesa (x=L/2,
-y=W/2), con el mejor radio ya encontrado en radius_comparison.py (R=0.335),
-mas dos circulos iguales a los costados, tangentes al circulo grande y
-centrados tambien en y=W/2, cerca de cada arco.
-
-Se barre el radio r de los dos circulos chicos (iguales entre si) para ver
-si mejora <t90> respecto de usar solo el circulo grande. Restricciones:
-
-i.  K=3 obstaculos integramente dentro del dominio y sin solaparse entre si.
-    Con el circulo grande tangente a las paredes horizontales y centrado en
-    x=L/2, los circulos chicos tangentes a el quedan en
-    x = L/2 -+ (R_big + r); la restriccion de contencion (Rk<=xk<=L-Rk) fija
-    el maximo geometrico: r <= (L/2 - R_big) / 2.
-ii. Rk >= r_particula y que permita generar las N particulas (se verifica
-    empiricamente antes de correr el experimento completo).
-
-N=100, maxTime=100s (mismos parametros que el resto de los scripts de 1.2).
-
-Java no conoce este experimento ni recibe argumentos por linea de comando:
-cada corrida se dispara reescribiendo la unica fuente de verdad,
-input/config.json, y ejecutando el jar sin argumentos. El config original se
-restaura al final.
-"""
 import json
 import subprocess
 from datetime import datetime, timezone

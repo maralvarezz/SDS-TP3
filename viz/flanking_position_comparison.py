@@ -1,30 +1,3 @@
-"""Punto 1.2: familia "objeto centrado + 2 pelotas iguales a los costados"
-(embudo), variando ahora la posicion de los dos circulos chicos en vez de su
-radio. Se fija el radio chico en el mejor valor ya encontrado en
-flanking_circles_comparison.py (r=0.02, el que dio menor <t90>) y se separa
-simetricamente ambos circulos chicos del circulo grande a lo largo del eje x,
-manteniendolos siempre centrados en y=W/2.
-
-Se parametriza la posicion por la distancia (gap) entre el centro del
-circulo grande (x=L/2) y el centro de cada circulo chico: los chicos quedan
-en x = L/2 -+ gap. El minimo geometrico es la tangencia con el circulo
-grande (gap = R_big + r_small); se barre gap desde ahi hasta cerca de la
-pared, dejando un margen para no solapar ni tocar el borde exactamente.
-
-Restricciones (mismas que el resto de 1.2):
-i.  K=3 obstaculos integramente dentro del dominio y sin solaparse entre si.
-    Contencion: r_small <= x_small <= L - r_small, es decir
-    gap <= L/2 - r_small.
-ii. Rk >= r_particula y que permita generar las N particulas (ya validado
-    para R_big y r_small en radius_comparison.py / flanking_circles_comparison.py).
-
-N=100, maxTime=100s (mismos parametros que el resto de los scripts de 1.2).
-
-Java no conoce este experimento ni recibe argumentos por linea de comando:
-cada corrida se dispara reescribiendo la unica fuente de verdad,
-input/config.json, y ejecutando el jar sin argumentos. El config original se
-restaura al final.
-"""
 import json
 import subprocess
 from datetime import datetime, timezone

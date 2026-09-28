@@ -1,4 +1,3 @@
-"""Lectura compartida de outputs Java; no contiene calculos fisicos."""
 import csv
 import json
 from pathlib import Path

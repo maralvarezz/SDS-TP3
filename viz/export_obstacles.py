@@ -1,12 +1,3 @@
-"""Genera el artefacto de entrega de la competencia (punto 24 del enunciado):
-una linea "xk yk Rk" por obstaculo.
-
-input/config.json sigue siendo la unica fuente de verdad. Si usa
-"obstaclesFile" (ver ConfigLoader), ese archivo YA esta en el formato de
-entrega exacto, asi que simplemente se copia. Si los obstaculos estan
-embebidos inline en el array "obstacles", se los formatea al mismo formato.
-En ningun caso este script se convierte en una fuente de verdad adicional.
-"""
 import json
 import shutil
 from pathlib import Path
