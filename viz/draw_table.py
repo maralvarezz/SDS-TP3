@@ -28,12 +28,11 @@ from matplotlib.patches import Circle
 
 ROOT = Path(__file__).resolve().parents[1]
 
-# Opcion local del script (no afecta la simulacion): que configuracion dibujar.
 CONFIG_PATH = ROOT / "input" / "config.json"
 
 WALL_WIDTH = 2.6
 OBSTACLE_COLOR = "0.6"
-SMALL_OBSTACLE = 0.05  # radios menores: la etiqueta R_k se dibuja arriba del circulo
+SMALL_OBSTACLE = 0.05
 
 
 def load_config(path):
@@ -60,7 +59,6 @@ def _label_obstacle_radius(ax, index, obstacle, count):
     ax.plot([x, x + r], [y, y], color="black", linestyle=":", linewidth=1.1, zorder=4)
     name = "R_k" if count == 1 else f"R_{index + 1}"
     if r < SMALL_OBSTACLE:
-        # En obstaculos chicos la etiqueta no entra sobre el radio: va arriba del circulo.
         ax.text(x, y + r + 0.008, f"${name}$", ha="center", va="bottom", fontsize=9, zorder=5)
     else:
         ax.text(x + r / 2, y + 0.008, f"${name}$", ha="center", va="bottom", fontsize=9, zorder=5)
@@ -91,7 +89,6 @@ def draw_table(config, ax=None, show_radius=True, title=None):
         if show_radius:
             _label_obstacle_radius(ax, i, obstacle, len(obstacles))
 
-    # Cota del arco (d) a la izquierda, con sus guias hasta la pared.
     x_d = -0.06
     for y in (low, high):
         ax.plot([x_d - 0.01, -0.005], [y, y], color="0.55", linewidth=0.8, zorder=1)
@@ -101,7 +98,6 @@ def draw_table(config, ax=None, show_radius=True, title=None):
     ax.text(x_d - 0.075, width / 2, "arco", ha="right", **label)
     ax.text(length + 0.02, width / 2, "arco", ha="left", **label)
 
-    # Cotas de ancho (W) a la derecha y de largo (L) abajo.
     x_w = length + 0.14
     _dimension_arrow(ax, (x_w, 0), (x_w, width))
     ax.text(x_w + 0.03, width / 2, "$W$", ha="left", va="center", fontsize=14)

@@ -63,7 +63,7 @@ OUTPUT = ROOT / "output"
 N = 100
 MAX_TIME = 100.0
 FREE_RADII = [0.24, 0.26, 0.28, 0.30, 0.32]
-REALIZATIONS = 5  # minimo del enunciado para el punto 1.2
+REALIZATIONS = 5
 BASE_SEED = 20261700
 RETRIES = 5
 
@@ -177,10 +177,6 @@ def plot(results):
         ax.axhspan(empty_mean - empty_std, empty_mean + empty_std, color="tab:blue", alpha=0.15)
     ax.set(xlabel="Radios de los semicirculos (m)", ylabel="<t90> (s)")
     ax.grid(alpha=0.25)
-    # Adentro del grafico, abajo a la izquierda: ahi la curva esta en su punto
-    # mas alto (r=0.24) y queda espacio libre por debajo sin tapar ni la
-    # curva/barras de error ni la franja de mesa vacia (que ocupa la parte
-    # superior).
     ax.legend(loc="lower left")
     folder = OUTPUT / "experiment_1_2_plots"
     folder.mkdir(parents=True, exist_ok=True)

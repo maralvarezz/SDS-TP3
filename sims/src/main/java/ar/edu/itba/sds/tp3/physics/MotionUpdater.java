@@ -3,7 +3,6 @@ package ar.edu.itba.sds.tp3.physics;
 import ar.edu.itba.sds.tp3.model.Particle;
 import ar.edu.itba.sds.tp3.model.SimulationState;
 
-/** Vuelo libre hasta el instante del proximo evento. */
 public final class MotionUpdater {
     public SimulationState advanceTo(SimulationState state, double time) {
         if (!Double.isFinite(time) || time < state.time()) {

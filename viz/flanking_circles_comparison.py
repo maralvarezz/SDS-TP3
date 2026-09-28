@@ -43,10 +43,10 @@ OUTPUT = ROOT / "output"
 
 N = 100
 MAX_TIME = 100.0
-BIG_RADIUS = 0.335  # mejor radio encontrado en radius_comparison.py
+BIG_RADIUS = 0.335
 SMALL_RADII = [0.02, 0.04, 0.06, 0.08, 0.10, 0.12, 0.13]
-MARGIN = 1.001  # separa apenas mas que la tangencia exacta, evita solapar por redondeo
-REALIZATIONS = 5  # minimo del enunciado para el punto 1.2
+MARGIN = 1.001
+REALIZATIONS = 5
 BASE_SEED = 20261500
 RETRIES = 5
 

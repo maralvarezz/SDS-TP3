@@ -111,14 +111,6 @@ MAX_TIME = 100.0
 EVERY_EVENTS = 25
 BASE_SEED = 20270000
 
-# Solo para las barras de error de D y t90 en el grafico de CORRELACION
-# (plot_correlation). La curva DCM(t) y el ajuste lineal (plot_msd_all) siguen
-# usando una unica realizacion por configuracion -- la realizacion 0 de este
-# barrido, con la misma seed que antes (BASE_SEED + config_index) -- tal como
-# pide el enunciado/la correccion de catedra para el punto 1.3. La correccion
-# hablaba puntualmente de esa curva y de no promediar el DCM entre
-# realizaciones; el grafico de correlacion D vs t90 es otro grafico distinto,
-# y para tener barra de error en ambos ejes hacen falta varias corridas.
 REALIZATIONS = 5
 
 FIT_LOW_FRACTION = 0.0
@@ -128,13 +120,6 @@ PLATEAU_TAIL_FRACTION = 0.20
 BEST_RADIUS = 0.339
 BEST_FREE_RADIUS = 0.30
 
-# Un unico representante FINAL por familia (mesa vacia + 3), no uno por eje
-# explorado: x=0.6 (posicion, con un radio de referencia todavia sin
-# optimizar) y embudo_r=0.02 (circulos chicos tangentes, gap todavia sin
-# optimizar) eran resultados INTERMEDIOS de sus respectivos barridos -- ya
-# quedaron superados por R=0.339 (misma posicion x=0.6=L/2, radio ya
-# optimizado) y embudo_gap=0.45 (mismo radio chico 0.02, gap ya optimizado).
-# Family C (competencia_R=0.3) directamente faltaba.
 BUILDERS = {
     "mesa_vacia": lambda length, width, goal: [],
     "R=0.339": lambda length, width, goal: [
@@ -147,8 +132,8 @@ CONFIGS = list(BUILDERS)
 
 def build_config(base, obstacles, seed):
     cfg = json.loads(json.dumps(base))
-    cfg.pop("obstaclesFile", None)  # esta corrida fija sus propios obstaculos inline
-    cfg.pop("initialPositionsFile", None)  # esta corrida usa colocacion aleatoria por defecto
+    cfg.pop("obstaclesFile", None)
+    cfg.pop("initialPositionsFile", None)
     cfg["simulation"]["maxTime"] = MAX_TIME
     cfg["simulation"]["seed"] = seed
     cfg["particles"]["count"] = N
@@ -272,35 +257,16 @@ def plot_msd_all(results):
         display_name = fu_curves.DISPLAY_NAMES.get(label, label)
         ax.plot(r["times"], r["msd"], color=color, linewidth=1.8,
                  label=display_name)
-        # La recta se dibuja desde el origen (no desde "lo"): el ajuste ya
-        # fuerza el modelo <z^2>=4Dt por el origen (Teorica_0), asi que
-        # arrancar el trazo en "lo" lo dejaba flotando en el medio de la
-        # curva sin tocar (0,0). Se corta justo en "hi" y no mas alla: pasado
-        # ese punto la curva real entra en la zona de saturacion por
-        # confinamiento (deja de crecer ~linealmente), asi que el modelo ya
-        # no aplica ahi por construccion -- extrapolar la recta mas alla solo
-        # hace parecer que el ajuste "falla" cuando en realidad esta fuera de
-        # su rango valido a proposito.
         _, hi = r["window"]
         fit_ts = np.array([0.0, hi])
         ax.plot(fit_ts, r["slope"] * fit_ts + r["intercept"], color=color,
                  linestyle="--", linewidth=2.2, alpha=0.75, zorder=1)
-    # Eje x fijo en 10s: bastante mas ancho que cualquier ventana de ajuste
-    # (todas quedan por debajo de ~2.5s), asi las rectas punteadas se ven
-    # claramente concentradas en la primera parte de la curva en vez de
-    # ocupar casi todo el ancho del grafico.
     XLIM_MAX = 10.0
     ax.set_xlim(0, XLIM_MAX)
-    # Recorta tambien el eje y al maximo DCM que realmente aparece dentro del
-    # rango de tiempo mostrado (antes quedaba fijado por el valor de
-    # saturacion de mesa vacia a t=100s, muy por encima de lo que se ve en
-    # este recorte de x, dejando el grafico vacio arriba).
     ymax = max(r["msd"][r["times"] <= XLIM_MAX].max() for r in results.values())
-    ax.set_ylim(0, ymax * 1.08)  # el 0 explicito ancla el origen (0,0) --
-    # por donde pasan todas las rectas de ajuste -- a la esquina inferior
-    # izquierda, en vez del margen automatico de matplotlib
+    ax.set_ylim(0, ymax * 1.08)
     ax.set(xlabel="Tiempo simulado (s)", ylabel="DCM (m^2)")
-    ax.yaxis.set_major_locator(MaxNLocator(nbins=12))  # mas marcas en el eje y
+    ax.yaxis.set_major_locator(MaxNLocator(nbins=12))
     ax.grid(alpha=0.25)
     ax.legend(fontsize=8)
     folder = OUTPUT / "experiment_1_3_plots"

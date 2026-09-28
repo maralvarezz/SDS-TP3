@@ -32,11 +32,11 @@ import fu_curves
 import goal_bumpers_comparison as runner
 from obstacle_layouts import validate_layout
 
-MARGIN = 1.001  # evita tangencia exacta (con paredes y entre circulos) por redondeo
+MARGIN = 1.001
 RADII = [0.04, 0.06, 0.08, 0.10, 0.12]
 REALIZATIONS = 10
 BASE_SEED = 20271000
-COLOR = "tab:pink"  # ver fu_curves.CONFIG_COLORS
+COLOR = "tab:pink"
 
 
 def layout(rho, length, width):

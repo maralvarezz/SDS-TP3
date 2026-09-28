@@ -42,26 +42,24 @@ OUTPUT = ROOT / "output"
 
 N = 100
 MAX_TIME = 100.0
-BEST_X = 0.60  # encontrado en configuration_comparison.py (x-sweep con R=0.15)
+BEST_X = 0.60
 R_VALUES = [0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.325, 0.335]
-REALIZATIONS = 5  # minimo del enunciado para el punto 1.2
+REALIZATIONS = 5
 BASE_SEED = 20261200
 RETRIES = 5
 
 
 def validate_radius(r, length, width, x, y, particle_radius):
-    # Restriccion (ii): Rk >= r.
     if r < particle_radius:
         raise ValueError(f"Restriccion (ii) violada: R={r} < r={particle_radius}")
-    # Restriccion (i): obstaculo integramente dentro del dominio.
     if not (r <= x <= length - r and r <= y <= width - r):
         raise ValueError(f"Restriccion (i) violada (fuera de dominio): x={x}, y={y}, R={r}")
 
 
 def build_config(base, obstacles, seed):
     cfg = json.loads(json.dumps(base))
-    cfg.pop("obstaclesFile", None)  # esta corrida fija sus propios obstaculos inline
-    cfg.pop("initialPositionsFile", None)  # esta corrida usa colocacion aleatoria por defecto
+    cfg.pop("obstaclesFile", None)
+    cfg.pop("initialPositionsFile", None)
     cfg["simulation"]["maxTime"] = MAX_TIME
     cfg["simulation"]["seed"] = seed
     cfg["particles"]["count"] = N

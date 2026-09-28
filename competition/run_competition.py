@@ -153,8 +153,6 @@ def run_competition(seed, show_progress=False):
     competition_config = build_competition_config(java_seed)
 
     COMPETITION_CONFIG_PATH.write_text(json.dumps(competition_config, indent=2) + "\n", encoding="utf-8")
-    # Archivos temporales evitan bloquear pipes y permiten conservar el timeout
-    # incluso si Java tarda en anunciar su carpeta de salida.
     with tempfile.TemporaryDirectory(prefix="competition_") as logs, \
             (Path(logs) / "stdout.txt").open("w", encoding="utf-8") as stdout, \
             (Path(logs) / "stderr.txt").open("w", encoding="utf-8") as stderr:

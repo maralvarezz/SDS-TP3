@@ -57,13 +57,10 @@ from PIL import Image
 
 from common import latest_run, one_file, rows
 
-# Opciones de reproduccion locales; no afectan la simulacion ni su configuracion.
-FPS = 20                 # solo se usa para el piso de duracion (1000/FPS) y el
-                          # hold del ultimo frame -- no se muestrea a esta tasa
-SPEED = 1.0               # segundos simulados por segundo real de video (1.0 = tiempo real)
-MIN_FRAME_MS = round(1000 / FPS)  # piso de duracion por frame agrupado (legibilidad)
-MAX_FRAME_MS = 3000        # techo de duracion por frame (que un tramo sin
-                            # eventos no congele la animacion varios segundos)
+FPS = 20
+SPEED = 1.0
+MIN_FRAME_MS = round(1000 / FPS)
+MAX_FRAME_MS = 3000
 
 
 def frames(run, metadata):
@@ -103,28 +100,24 @@ def main():
     table = metadata["config"]["simulation"]
     radius = metadata["config"]["particles"]["radius"]
 
-    # Primera pasada (liviana, solo tiempos): decide QUE estados reales se
-    # muestran (agrupando rachas de eventos casi simultaneos) y cuanto dura
-    # cada uno en el GIF, proporcional al Delta t real acumulado del grupo.
     times = [time for time, _ in frames(run, metadata)]
     if len(times) < 2:
         raise ValueError("Se necesitan al menos 2 estados grabados para animar")
 
-    selected = [0]  # indices (en `times`) de los estados reales que se van a mostrar
+    selected = [0]
     last_shown_time = times[0]
     for i in range(1, len(times) - 1):
         if (times[i] - last_shown_time) * 1000 / speed >= MIN_FRAME_MS:
             selected.append(i)
             last_shown_time = times[i]
     if selected[-1] != len(times) - 1:
-        selected.append(len(times) - 1)  # el estado final siempre se muestra
+        selected.append(len(times) - 1)
 
     durations_ms = [
         int(max(MIN_FRAME_MS, min(MAX_FRAME_MS, 1000 * (times[selected[k + 1]] - times[selected[k]]) / speed)))
         for k in range(len(selected) - 1)
     ]
-    durations_ms.append(MIN_FRAME_MS)  # el ultimo frame no tiene "siguiente" del
-    # cual derivar su Delta t: se sostiene un instante fijo y corto.
+    durations_ms.append(MIN_FRAME_MS)
     selected_set = frozenset(selected)
 
     fig, ax = plt.subplots(figsize=(7, 4.5))
@@ -142,10 +135,6 @@ def main():
     canvas = fig.canvas
 
     def render_frames():
-        # Segunda pasada (re-lee states_*.csv): renderiza y entrega un frame
-        # PIL por vez -- nunca se guardan todos los frames renderizados en
-        # memoria a la vez, algo importante con corridas de cientos de miles
-        # de eventos.
         for idx, (time, particles) in enumerate(frames(run, metadata)):
             if idx not in selected_set:
                 continue
@@ -176,9 +165,7 @@ def main():
         print(path)
     finally:
         plt.close(fig)
-    return path  # util para orquestar animaciones desde otro script (ver
-    # diffusion_animations.py), sin cambiar el comportamiento por linea de
-    # comandos existente
+    return path
 
 
 if __name__ == "__main__":

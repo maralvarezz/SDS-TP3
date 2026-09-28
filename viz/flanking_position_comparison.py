@@ -46,11 +46,11 @@ OUTPUT = ROOT / "output"
 
 N = 100
 MAX_TIME = 100.0
-BIG_RADIUS = 0.335  # mismo radio grande que flanking_circles_comparison.py
-SMALL_RADIUS = 0.02  # mejor radio chico encontrado en flanking_circles_comparison.py
-GAPS = [0.36, 0.39, 0.42, 0.45, 0.48, 0.51]  # distancia centro-a-centro (circulo grande -> chico)
-WALL_MARGIN = 0.05  # se evita tocar exactamente la pared para no generar casos limite
-REALIZATIONS = 5  # minimo del enunciado para el punto 1.2
+BIG_RADIUS = 0.335
+SMALL_RADIUS = 0.02
+GAPS = [0.36, 0.39, 0.42, 0.45, 0.48, 0.51]
+WALL_MARGIN = 0.05
+REALIZATIONS = 5
 BASE_SEED = 20261600
 RETRIES = 5
 

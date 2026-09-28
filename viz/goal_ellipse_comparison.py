@@ -51,9 +51,9 @@ OUTPUT = ROOT / "output"
 
 N = 100
 MAX_TIME = 100.0
-REFINED_RADII = [0.29, 0.30, 0.31]  # completa la grilla ya corrida (0.24, 0.26, 0.28, 0.30, 0.32)
-ELLIPSE_A_VALUES = [0.40, 0.45, 0.50]  # semieje mayor; b=ELLIPSE_B=0.32 fijo
-REALIZATIONS = 5  # minimo del enunciado para el punto 1.2
+REFINED_RADII = [0.29, 0.30, 0.31]
+ELLIPSE_A_VALUES = [0.40, 0.45, 0.50]
+REALIZATIONS = 5
 BASE_SEED = 20267100
 RETRIES = 5
 

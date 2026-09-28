@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public final class Simulation {
-    // Guardia contra contactos degenerados que no permiten avanzar el tiempo.
     private static final int MAX_EVENTS_AT_SAME_TIME = 100_000;
 
     public SimulationResult run(SimulationConfig config, SimulationState initial,
@@ -32,7 +31,6 @@ public final class Simulation {
             }
             state = motion.advanceTo(state, event.time());
             if (event.type() == EventType.SIMULATION_END) {
-                // Frame final obligatorio; el escritor evita duplicar un frame ya emitido.
                 observer.state(state, totalEvents);
                 break;
             }

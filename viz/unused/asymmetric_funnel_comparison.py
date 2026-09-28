@@ -46,7 +46,7 @@ MAX_TIME = 100.0
 BIG_RADIUS = 0.335
 SMALL_RADIUS = 0.02
 MARGIN = 1.001
-SHIFTS = [0.0, 0.05, 0.10, 0.15, 0.20]  # desplazamiento hacia el arco x=0, desde el centro
+SHIFTS = [0.0, 0.05, 0.10, 0.15, 0.20]
 REALIZATIONS = 10
 BASE_SEED = 20267000
 RETRIES = 5

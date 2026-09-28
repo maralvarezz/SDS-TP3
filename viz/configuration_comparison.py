@@ -37,9 +37,6 @@ OUTPUT = ROOT / "output"
 
 N = 100
 MAX_TIME = 100.0
-# Restriccion (ii): Rk >= r y que permita generar las N particulas. r=0.0175 m
-# en input/config.json; R=0.15 m es "grande" pero deja area suficiente para 100
-# particulas (se valido empiricamente antes de correr el experimento completo).
 OBSTACLE_RADIUS = 0.15
 REALIZATIONS = 5
 BASE_SEED = 20260912
@@ -47,9 +44,8 @@ RETRIES = 5
 
 
 def x_positions(length):
-    # Restriccion (i): Rk <= xk <= L - Rk, obstaculo integramente dentro del dominio.
     low, high = OBSTACLE_RADIUS, length - OBSTACLE_RADIUS
-    margin = 0.05  # se evita tocar exactamente la pared para no generar casos limite
+    margin = 0.05
     step = 0.10
     values = []
     x = low + margin
@@ -61,8 +57,8 @@ def x_positions(length):
 
 def build_config(base, obstacles, seed):
     cfg = json.loads(json.dumps(base))
-    cfg.pop("obstaclesFile", None)  # esta corrida fija sus propios obstaculos inline
-    cfg.pop("initialPositionsFile", None)  # esta corrida usa colocacion aleatoria por defecto
+    cfg.pop("obstaclesFile", None)
+    cfg.pop("initialPositionsFile", None)
     cfg["simulation"]["maxTime"] = MAX_TIME
     cfg["simulation"]["seed"] = seed
     cfg["particles"]["count"] = N
@@ -119,7 +115,7 @@ def realize():
     base = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
     length = base["simulation"]["length"]
     width = base["simulation"]["width"]
-    y = width / 2  # centrado, simetrico respecto de los arcos en x=0 y x=L
+    y = width / 2
 
     results = {"empty": [], "positions": {}}
     for i in range(REALIZATIONS):

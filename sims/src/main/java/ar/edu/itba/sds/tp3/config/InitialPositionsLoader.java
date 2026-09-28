@@ -9,14 +9,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Carga posiciones iniciales de particulas desde un archivo externo, si
- * config.json declara "initialPositionsFile". Es un mecanismo opcional,
- * separado de ConfigLoader, para experimentos que necesitan una condicion
- * inicial distinta a la generacion aleatoria por rechazo secuencial (por
- * ejemplo, comparar cuantas particulas entran con un empaquetado hexagonal).
- * No reemplaza ni modifica la generacion aleatoria por defecto.
- */
 public final class InitialPositionsLoader {
     private InitialPositionsLoader() {}
 

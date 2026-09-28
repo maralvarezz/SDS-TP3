@@ -14,7 +14,7 @@ import diffusion
 import draw_table
 import fu_curves
 
-MAX_LABELED_OBSTACLES = 3  # con mas obstaculos las etiquetas R_k se pisan
+MAX_LABELED_OBSTACLES = 3
 
 
 def main():
@@ -22,9 +22,6 @@ def main():
     sim = base["simulation"]
     length, width, goal = sim["length"], sim["width"], sim["goalSize"]
 
-    # Solo las 4 configuraciones finales (mesa vacia + 1 representante final
-    # por familia), las mismas que diffusion.py/fu_curves_summary.py -- no la
-    # config de competencia "vigente" en input/config.json aparte.
     tables = {label: builder(length, width, goal) for label, builder in diffusion.BUILDERS.items()}
 
     folder = draw_table.ROOT / "output" / "table_plots"

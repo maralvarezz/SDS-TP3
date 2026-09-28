@@ -1,6 +1,5 @@
 package ar.edu.itba.sds.tp3.event;
 
-/** Indices de entidades y versiones de velocidad al predecir el choque; -1 significa ausente. */
 public record Event(double time, EventType type, int particleA, int particleB,
                     int obstacle, Wall wall, long versionA, long versionB)
         implements Comparable<Event> {
