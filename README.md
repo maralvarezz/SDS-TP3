@@ -33,8 +33,8 @@ o barras de error entre realizaciones.
 ## Animación
 
 `viz/animation.py` genera un GIF independiente a partir de los archivos de una
-corrida completada. La configuración actual guarda los datos necesarios:
-`writeStates: true`, `everyEvents: 1` y `writeCollisions: true`.
+corrida completada. Solo requiere `writeStates: true`; no depende de
+`everyEvents: 1` ni de `writeCollisions: true`.
 
 Después de recompilar Java y ejecutar una nueva corrida:
 
@@ -42,22 +42,47 @@ Después de recompilar Java y ejecutar una nueva corrida:
 .venv/Scripts/python viz/animation.py
 ```
 
-El GIF queda en `<corrida>/plots/animation_<timestamp>.gif`. `SPEED = 2` reproduce
-dos segundos simulados por segundo de video. Los FPS solo controlan la reproducción;
-Java sigue avanzando por eventos. Azul indica FRESH y rojo USED.
-`FPS` y `SPEED` son opciones locales en `viz/animation.py`; no pertenecen al JSON
-de simulación. Ambos scripts se ejecutan sin argumentos.
+El GIF queda en `<corrida>/plots/animation_<timestamp>.gif`. Cada frame es
+exactamente un estado real grabado por Java en `states_*.csv`: nunca se
+inventa ni se busca una posición en un tiempo intermedio. Entre eventos las
+partículas se ven quietas y saltan a la posición del próximo evento en
+cuanto ocurre. La única libertad que se toma el script es sobre cuánto
+tiempo real dura cada frame en el GIF: con `SPEED = 1.0` un segundo
+simulado dura un segundo real de video (correspondencia 1 a 1), acotado
+entre `MIN_FRAME_MS` y `MAX_FRAME_MS` solo por motivos de reproducción (un
+frame de 0 ms no se ve, un tramo sin eventos no debería congelar la
+animación). Esto cumple la restricción de la cátedra de no usar
+interpolación, búsqueda ni tiempos que no correspondan a eventos, ni para
+animar ni para ningún otro fin.
+
+Cuando varios eventos reales ocurren casi al mismo tiempo (choques
+encadenados), mostrarlos por separado forzaría a estirar cada uno hasta
+`MIN_FRAME_MS` y la animación se vería en cámara lenta aunque en la
+realidad esa racha dure una fracción de segundo. Para mantener la
+correspondencia 1 a 1 con el tiempo real, el script agrupa esos eventos
+consecutivos y muestra solo el último estado real de cada grupo, sostenido
+durante el tiempo real acumulado de todo el grupo: sigue eligiendo cuáles
+estados ya grabados por Java se muestran, nunca calcula una posición en un
+tiempo que no sea el de un evento real.
+
+Los FPS solo controlan la reproducción; Java sigue avanzando por eventos.
+Azul indica FRESH y rojo USED. `FPS` y `SPEED` son opciones locales en
+`viz/animation.py`; no pertenecen al JSON de simulación. Ambos scripts se
+ejecutan sin argumentos.
 
 `states` registra posiciones, velocidades y estado lógico de todas las partículas
 en t=0 y después de cada choque. `collisions` registra tiempo absoluto simulado,
 número de evento, tipo, IDs involucrados, obstáculo y pared. `metadata` incluye
 geometría, radios, configuración efectiva, seed y `animationReady`.
 
-Python verifica que los eventos de ambos CSV coincidan e interpola visualmente las
-posiciones entre estados consecutivos. No predice choques ni modifica la física.
-Los contactos simultáneos se consumen en su orden registrado antes de dibujar.
-Las corridas antiguas con estados cada 10 eventos no sirven para esta reconstrucción;
-el script las rechaza. Guardar cada evento aumenta el tamaño de los CSV.
+Python verifica que los estados grabados sean consistentes (mismas
+partículas en cada evento, tiempos no decrecientes, estado inicial y final
+presentes). No predice choques ni modifica la física. Un `everyEvents` más
+alto simplemente anima con eventos reales más espaciados entre sí (sigue
+siendo tiempo real, solo que se salta eventos reales en vez de mostrarlos
+todos), lo cual mantiene manejable el tamaño del GIF en configuraciones con
+muchas colisiones (ver `diffusion_animations.py`). Guardar cada evento
+aumenta el tamaño de los CSV.
 
 Trabajo Práctico 3 de Simulación de Sistemas: Billar-Metegol.
 Las reglas de desarrollo están en [AGENTS.md](AGENTS.md) y las fuentes oficiales en `docs/`.
