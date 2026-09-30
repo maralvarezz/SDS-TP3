@@ -24,7 +24,7 @@ COMPETITION_SIMULATION = {
     "length": 1.20,
     "width": 0.68,
     "goalSize": 0.20,
-    "maxTime": 100.0,
+    "maxTime": 40.0,
 }
 COMPETITION_PARTICLES = {
     "count": 100,
